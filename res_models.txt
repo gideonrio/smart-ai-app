@@ -1,0 +1,46 @@
+﻿python : Traceback (most 
+recent call last):
+At line:1 char:1
++ python "c:\Users\user\OneDri
+ve\Desktop\farmer 
+app\list_models.py" 2>& ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo          : 
+    NotSpecified: (Traceback  
+   (most recent call last):   
+ :String) [], RemoteExcept    
+ion
+    + FullyQualifiedErrorId : 
+    NativeCommandError
+ 
+  File "c:\Users\user\OneDrive
+\Desktop\farmer 
+app\list_models.py", line 2, 
+in <module>
+    client = Groq(api_key="gsk
+_QCjwmChRj5CIXCTSu5U9WGdyb3FYA
+crudBUwmqzGhzYzk3ISyaYw")
+  File "C:\Users\user\AppData\
+Local\Programs\Python\Python31
+0\lib\site-packages\groq\_clie
+nt.py", line 99, in __init__
+    super().__init__(
+  File "C:\Users\user\AppData\
+Local\Programs\Python\Python31
+0\lib\site-packages\groq\_base
+_client.py", line 843, in 
+__init__
+    self._client = 
+http_client or 
+SyncHttpxClientWrapper(
+  File "C:\Users\user\AppData\
+Local\Programs\Python\Python31
+0\lib\site-packages\groq\_base
+_client.py", line 741, in 
+__init__
+    super().__init__(**kwargs)
+TypeError: Client.__init__() 
+got an unexpected keyword 
+argument 'proxies'
