@@ -1,5 +1,7 @@
 import os
 import sys
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask
 
 # 🚜 Smart AI Farm - Render Deployment Entry Point
@@ -14,8 +16,18 @@ if PROJECT_DIR not in sys.path:
 os.environ.pop('HTTP_PROXY', None)
 os.environ.pop('HTTPS_PROXY', None)
 
-from backend.app import create_app
-app = create_app()
+# Initialize the main app
+try:
+    from backend.app import create_app
+    app = create_app()
+except ImportError as e:
+    print(f"CRITICAL: Could not import backend.app: {e}")
+    # Minimal fallback app for troubleshooting
+    app = Flask(__name__)
+    @app.route("/")
+    def fail():
+        return {"error": "Application core missing", "details": "Check logs for import errors"}
+
 # Render expects the object to be named 'app'
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
