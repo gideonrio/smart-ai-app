@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Crop Guard | Disease & Pest Detection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-leaf text-success me-2"></i>AI Crop Guard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section class="hero-section">
+            <h1 class="display-4 fw-bold mb-3">Protect Your Harvest</h1>
+            <p class="lead opacity-75">Upload a photo of your leaf, fruit, or plant to instantly detect diseases and get
+                expert treatment advice.</p>
+        </section>
+
+        <!-- Weather and Tips Grid -->
+        <div class="row mb-5">
+            <div class="col-lg-8">
+                <div class="weather-card glass-card mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0"><i class="fas fa-cloud-sun me-2"></i>Local Weather Insights</h4>
+                        <span id="weather-location" class="badge bg-success">Auto-detecting...</span>
+                    </div>
+                    <div id="weather-content" class="row text-center">
+                        <div class="col-4">
+                            <h2 id="weather-temp">--</h2>
+                            <small class="opacity-75">Temperature</small>
+                        </div>
+                        <div class="col-4 border-start border-end border-secondary">
+                            <h2 id="weather-humidity">--</h2>
+                            <small class="opacity-75">Humidity</small>
+                        </div>
+                        <div class="col-4">
+                            <h2 id="disease-risk" class="text-warning">--</h2>
+                            <small class="opacity-75">Disease Risk</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-card glass-card">
+                    <form id="predict-form">
+                        <div class="mb-4 text-center">
+                            <div class="btn-group mb-3" role="group">
+                                <button type="button" class="btn btn-outline-success active" id="btn-upload-mode">
+                                    <i class="fas fa-file-upload me-2"></i>Upload File
+                                </button>
+                                <button type="button" class="btn btn-outline-success" id="btn-camera-mode">
+                                    <i class="fas fa-camera me-2"></i>Use Camera
+                                </button>
+                            </div>
+
+                            <div id="upload-mode-container">
+                                <label for="image-upload" class="form-label d-block">
+                                    <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-success"></i>
+                                    <h5>Choose an Image</h5>
+                                </label>
+                                <input class="form-control bg-dark text-white border-secondary" type="file"
+                                    id="image-upload" accept="image/*">
+                            </div>
+
+                            <div id="camera-mode-container" style="display: none;">
+                                <video id="video-feed" class="w-100 rounded mb-3" autoplay playsinline></video>
+                                <button type="button" class="btn btn-success" id="btn-capture">
+                                    <i class="fas fa-camera me-2"></i>Capture Photo
+                                </button>
+                                <canvas id="capture-canvas" style="display: none;"></canvas>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <img id="image-preview" src="#" alt="Preview" style="display: none;">
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button type="submit" class="btn btn-predict btn-lg w-100">Detect Disease</button>
+                        </div>
+                    </form>
+
+                    <div id="result-card" class="result-card mt-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 id="res-title" class="mb-0">Detection Result</h3>
+                            <span id="res-confidence" class="confidence-badge">98% Confidence</span>
+                        </div>
+                        <hr class="opacity-25">
+                        <div class="row">
+                            <div class="col-sm-4 mb-3">
+                                <strong>Plant Part:</strong>
+                                <p id="res-part" class="text-success mb-0">Leaf</p>
+                            </div>
+                            <div class="col-sm-4 mb-3">
+                                <strong>Pest Affected:</strong>
+                                <p id="res-pest" class="text-danger mb-0">None</p>
+                            </div>
+                            <div class="col-sm-4 mb-3">
+                                <strong>Recommended Pesticide:</strong>
+                                <p id="res-pesticide" class="mb-0">Pesticide Name</p>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Treatment Recommendation:</strong>
+                            <p id="res-recommendation" class="opacity-75">Loading treatment details...</p>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a id="res-buy" href="#" target="_blank" class="buy-btn">
+                                <i class="fas fa-shopping-cart me-2"></i>Buy Recommended Pesticide
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="history-card" class="glass-card mt-4" style="display: none;">
+                    <h5 class="mb-3"><i class="fas fa-history me-2"></i>Recent Detections</h5>
+                    <div id="history-list" class="list-group list-group-flush bg-transparent">
+                        <!-- History items will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="glass-card mb-4">
+                    <h4 class="mb-3"><i class="fas fa-lightbulb text-warning me-2"></i>Expert Tips</h4>
+                    <div id="tips-container">
+                        <!-- Tips will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-5 py-4 text-center opacity-50">
+            <p>&copy; 2026 AI Crop Guard. Empowering Farmers with AI.</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 30px 20px 80px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 2px solid var(--primary-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 15px;
+            color: var(--primary-green);
+            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .gender-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .gender-btn {
+            flex: 1;
+            padding: 10px;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .gender-btn.active {
+            background: rgba(46, 204, 113, 0.2);
+            border-color: var(--primary-green);
+            color: var(--primary-green);
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .nav-item.active {
+            color: var(--primary-green);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container animate-fade-in">
+        <a href="/dashboard"
+            style="color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:8px;margin-bottom:25px;font-weight:500;">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <h1 style="font-size: 24px;">Personal Information</h1>
+            <p style="color: var(--text-muted); margin-top: 5px;">Help us personalize your farming experience</p>
+        </div>
+
+        <div class="glass-panel" style="padding: 25px; border-radius: 20px;">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="name" class="form-control" placeholder="Enter your name">
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Age</label>
+                    <input type="number" id="age" class="form-control" placeholder="Years">
+                </div>
+                <div class="form-group" style="flex: 1.5;">
+                    <label>Gender</label>
+                    <div class="gender-selector">
+                        <button class="gender-btn" onclick="setGender('Male')" id="bn-Male">
+                            <i class="fas fa-mars"></i> Male
+                        </button>
+                        <button class="gender-btn" onclick="setGender('Female')" id="bn-Female">
+                            <i class="fas fa-venus"></i> Female
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="phone" class="form-control" placeholder="+91 XXX XXX XXXX">
+            </div>
+
+            <div class="form-group">
+                <label>Location / Village</label>
+                <input type="text" id="location" class="form-control" placeholder="Enter your village or city">
+            </div>
+
+            <div class="form-group">
+                <label>Main Crop</label>
+                <input type="text" id="crop" class="form-control" placeholder="e.g. Paddy, Tomato, Cotton">
+            </div>
+
+            <button class="save-btn" onclick="saveProfile()">
+                <i class="fas fa-save"></i> Save Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <i class="fas fa-home nav-icon"></i><span>Home</span>
+        </a>
+        <a href="/weather" class="nav-item">
+            <i class="fas fa-cloud nav-icon"></i><span>Weather</span>
+        </a>
+        <a href="/chatbot" class="nav-item">
+            <i class="fas fa-robot nav-icon"></i><span>AI Bot</span>
+        </a>
+        <a href="/reminder" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i><span>Reminders</span>
+        </a>
+        <a href="/emergency" class="nav-item">
+            <i class="fas fa-phone-alt nav-icon"></i><span>Emergency</span>
+        </a>
+    </nav>
+
+    <script>
+        let selectedGender = '';
+
+        function setGender(gender) {
+            selectedGender = gender;
+            document.getElementById('bn-Male').classList.remove('active');
+            document.getElementById('bn-Female').classList.remove('active');
+            document.getElementById('bn-' + gender).classList.add('active');
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/auth/get-profile');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.name) document.getElementById('name').value = data.name;
+                    if (data.age) document.getElementById('age').value = data.age;
+                    if (data.phone) document.getElementById('phone').value = data.phone;
+                    if (data.location) document.getElementById('location').value = data.location;
+                    if (data.crop) document.getElementById('crop').value = data.crop;
+                    if (data.gender) setGender(data.gender);
+                }
+            } catch (err) { }
+        }
+
+        async function saveProfile() {
+            const payload = {
+                name: document.getElementById('name').value,
+                age: document.getElementById('age').value,
+                gender: selectedGender,
+                phone: document.getElementById('phone').value,
+                location: document.getElementById('location').value,
+                crop: document.getElementById('crop').value
+            };
+
+            try {
+                const res = await fetch('/api/auth/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    alert('Profile updated successfully!');
+                    window.location.href = '/dashboard';
+                }
+            } catch (err) {
+                alert('Error saving profile.');
+            }
+        }
+
+        window.onload = loadProfile;
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Irrigation | Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 20px 20px 80px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #1a6b3c, #0d4f2a);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .hero p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+        }
+
+        .form-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .form-title {
+            color: var(--primary-green);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .input-full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.05));
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            border-radius: 20px;
+            padding: 24px;
+            display: none;
+        }
+
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin-bottom: 20px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .result-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .result-lbl {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .alert-box {
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .alert-warning {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #ff7675;
+        }
+
+        .alert-success {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: #55efc4;
+        }
+
+        .range-input {
+            width: 100%;
+            accent-color: var(--primary-green);
+        }
+
+        .range-val {
+            color: var(--primary-green);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .nav-item.active,
+        .nav-item:hover {
+            color: var(--primary-green);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        @media(max-width:500px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container animate-fade-in">
+        <a href="/dashboard"
+            style="color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;font-weight:500;">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <div class="hero">
+            <div style="font-size: 3rem; margin-bottom: 12px;">💧</div>
+            <h1>Smart Irrigation</h1>
+            <p>AI-powered water recommendation for your farm</p>
+        </div>
+
+        <div class="form-card">
+            <div class="form-title"><i class="fas fa-seedling"></i> Farm Details</div>
+            <div class="input-grid">
+                <div>
+                    <label>Crop Type</label>
+                    <select class="form-control-farm" id="crop">
+                        <option value="rice">Rice (Paddy)</option>
+                        <option value="wheat">Wheat</option>
+                        <option value="maize">Maize</option>
+                        <option value="cotton">Cotton</option>
+                        <option value="tomato">Tomato</option>
+                        <option value="sugarcane">Sugarcane</option>
+                        <option value="onion">Onion</option>
+                        <option value="potato">Potato</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Area (Acres)</label>
+                    <input type="number" id="area" class="form-control-farm" value="1" min="0.1" step="0.5">
+                </div>
+                <div>
+                    <label>Temperature (°C) — <span class="range-val" id="tempVal">30°C</span></label>
+                    <input type="range" class="range-input" id="temperature" min="15" max="45" value="30"
+                        oninput="document.getElementById('tempVal').textContent=this.value+'°C'">
+                </div>
+                <div>
+                    <label>Rain Probability — <span class="range-val" id="rainVal">20%</span></label>
+                    <input type="range" class="range-input" id="rain_prob" min="0" max="100" value="20"
+                        oninput="document.getElementById('rainVal').textContent=this.value+'%'">
+                </div>
+                <div class="input-full">
+                    <label>Soil Moisture — <span class="range-val" id="soilVal">50%</span></label>
+                    <input type="range" class="range-input" id="soil_moisture" min="0" max="100" value="50"
+                        oninput="document.getElementById('soilVal').textContent=this.value+'%'" style="width:100%">
+                </div>
+            </div>
+            <button class="btn-farm" onclick="getRecommendation()"
+                style="width:100%;margin-top:20px;font-size:1rem;padding:15px;">
+                <i class="fas fa-magic"></i> Get Irrigation Recommendation
+            </button>
+        </div>
+
+        <div class="result-card" id="resultCard">
+            <div class="result-title"><i class="fas fa-tint"></i> Irrigation Plan</div>
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-val" id="waterLitres">--</div>
+                    <div class="result-lbl">Litres Needed</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-val" style="font-size:1.1rem;padding-top:5px;" id="bestTime">--</div>
+                    <div class="result-lbl">Best Time to Irrigate</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-val" id="frequency">--</div>
+                    <div class="result-lbl">Frequency</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-val" style="font-size:1rem;color:var(--primary-green);padding-top:5px;"
+                        id="timeReason">--</div>
+                    <div class="result-lbl">Why this time?</div>
+                </div>
+            </div>
+            <div id="alertBox"></div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
+        <a href="/weather" class="nav-item"><i class="fas fa-cloud nav-icon"></i><span>Weather</span></a>
+        <a href="/irrigation" class="nav-item active"><i class="fas fa-tint nav-icon"></i><span>Irrigation</span></a>
+        <a href="/chatbot" class="nav-item"><i class="fas fa-robot nav-icon"></i><span>AI Bot</span></a>
+        <a href="/schemes" class="nav-item"><i class="fas fa-hand-holding-dollar nav-icon"></i><span>Schemes</span></a>
+    </nav>
+
+    <script>
+        async function getRecommendation() {
+            const btn = document.querySelector('.btn-farm');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+            btn.disabled = true;
+
+            const payload = {
+                crop: document.getElementById('crop').value,
+                area_acres: document.getElementById('area').value,
+                temperature: document.getElementById('temperature').value,
+                rain_prob: document.getElementById('rain_prob').value,
+                soil_moisture: document.getElementById('soil_moisture').value
+            };
+
+            try {
+                const res = await fetch('/api/irrigation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                document.getElementById('waterLitres').textContent = data.skip_irrigation ? '0' : data.water_litres.toLocaleString();
+                document.getElementById('bestTime').textContent = data.best_time;
+                document.getElementById('frequency').textContent = data.frequency;
+                document.getElementById('timeReason').textContent = data.time_reason;
+
+                const alertBox = document.getElementById('alertBox');
+                if (data.alert) {
+                    const isWarning = data.alert.includes('⚠️') || data.alert.includes('🌧️') || data.alert.includes('🔥');
+                    alertBox.innerHTML = `<div class="alert-box ${isWarning ? 'alert-warning' : 'alert-success'}">${data.alert}</div>`;
+                } else {
+                    alertBox.innerHTML = '';
+                }
+
+                document.getElementById('resultCard').style.display = 'block';
+                document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                alert('Error fetching recommendation. Please try again.');
+            }
+
+            btn.innerHTML = '<i class="fas fa-magic"></i> Get Irrigation Recommendation';
+            btn.disabled = false;
+        }
+    </script>
+</body>
+
+</html>

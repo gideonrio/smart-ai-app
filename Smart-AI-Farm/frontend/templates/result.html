@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prediction Result - Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 30px 20px 80px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+
+        .back-btn:hover {
+            color: white;
+        }
+
+        .result-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .result-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .result-image {
+            width: 100%;
+            border-radius: 20px;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .confidence-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary-green) calc(var(--percent) * 1%), var(--bg-card) 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .confidence-inner {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .info-card {
+            padding: 20px;
+            border-radius: 16px;
+            background: rgba(30, 41, 59, 0.4);
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .treatment-box {
+            background: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--primary-green);
+            padding: 16px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 24px;
+        }
+
+        .treatment-box h3 {
+            color: var(--primary-green);
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-container animate-fade-in">
+        <a href="/dashboard" class="back-btn"><i class="fas fa-arrow-left"></i> Home</a>
+
+        <h1 style="font-size: 28px; margin-bottom: 30px;">Analysis <span
+                style="color: var(--primary-green);">Complete</span></h1>
+
+        <div class="result-layout">
+            <!-- Left Side: Image -->
+            <div>
+                <img id="resImage" class="result-image" alt="Scanned Crop">
+
+                <div class="glass-panel"
+                    style="margin-top: 24px; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="info-label">Confidence Score</div>
+                        <div class="info-value" id="resConfidenceText">0%</div>
+                    </div>
+                    <div class="confidence-circle" id="confCircle" style="--percent: 0;">
+                        <div class="confidence-inner">
+                            <i class="fas fa-check" style="color: var(--primary-green);"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Details -->
+            <div>
+                <div class="glass-panel info-card" style="position: relative;">
+                    <div class="info-label" id="resIdentityLabel">Status Message</div>
+                    <div class="info-value" style="color: var(--primary-green); font-size: 18px; margin-bottom: 15px; line-height: 1.4;" id="resIdentity">
+                        Scanning...</div>
+                    
+                    <!-- Language Selection for Voice -->
+                    <div style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span class="info-label" style="margin-bottom:0;">Voice Language</span>
+                        <select id="resLangSelect" class="glass-panel" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 15px; font-size: 13px; outline: none; cursor: pointer;">
+                            <option value="en-US">English</option>
+                            <option value="ta-IN">Tamil (தமிழ்)</option>
+                            <option value="hi-IN">Hindi (हिंदी)</option>
+                            <option value="te-IN">Telugu (తెలుగు)</option>
+                        </select>
+                    </div>
+
+                    <!-- Voice Assistant Button -->
+                    <button id="voiceBtn" class="btn-farm" style="width: 100%; margin-bottom: 15px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fas fa-volume-up"></i> <span>Listen to AI Diagnosis</span>
+                    </button>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <div class="info-label">Health Status</div>
+                            <div class="info-value" id="resStatus">--</div>
+                        </div>
+                        <div>
+                            <div class="info-label">Confidence</div>
+                            <div class="info-value" id="resConfidenceVal">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="glass-panel info-card" style="margin-bottom: 0;">
+                        <div class="info-label">Crop Name</div>
+                        <div class="info-value" id="resPlant">--</div>
+                    </div>
+                    <div class="glass-panel info-card" style="margin-bottom: 0;">
+                        <div class="info-label">Plant Type</div>
+                        <div class="info-value" id="resPart">--</div>
+                    </div>
+                </div>
+
+                <div id="diseasePestCard" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div class="glass-panel info-card" style="margin-bottom: 0; border-left: 4px solid var(--accent-red);">
+                            <div class="info-label">Disease Name</div>
+                            <div class="info-value" id="resDiseaseName">--</div>
+                        </div>
+                        <div class="glass-panel info-card" style="margin-bottom: 0; border-left: 4px solid var(--accent-red);">
+                            <div class="info-label">Pest Name</div>
+                            <div class="info-value" id="resPestName">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel info-card" id="locationCard">
+                    <div class="info-label">Exact Location on Plant</div>
+                    <div class="info-value" style="color: #ffb142; font-size: 18px;" id="resLocation">--</div>
+                </div>
+
+                <div class="treatment-box">
+                    <h3><i class="fas fa-seedling"></i> Recommended Treatment</h3>
+                    <p style="color: rgba(255,255,255,0.9); line-height: 1.6; margin-bottom: 15px;" id="resTreatment">
+                        --
+                    </p>
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; margin-top: 15px;">
+                        <div class="info-label">Suggested Pesticide</div>
+                        <div class="info-value" id="resPesticide" style="font-size: 16px; margin-bottom: 10px;">--</div>
+                        <a href="#" target="_blank" id="resBuyLink" class="btn-farm"
+                            style="padding: 8px 16px; font-size: 14px;"><i class="fas fa-shopping-cart"></i> Buy Now</a>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="margin-top: 20px; padding: 15px; border-left: 4px solid #f1c40f;">
+                    <div class="info-label" style="color: #f1c40f;"><i class="fas fa-star"></i> AI Grade (Quality)</div>
+                    <div class="info-value" id="resGrade">Grade A - Premium Quality</div>
+                </div>
+
+                <button class="btn-outline-farm" onclick="window.location.href='/upload'"
+                    style="width: 100%; margin-top: 24px;">
+                    <i class="fas fa-camera"></i> Scan Another Image
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const multiData = sessionStorage.getItem('ai_results_multiple');
+            const singleData = sessionStorage.getItem('ai_result');
+
+            if (!multiData && !singleData) {
+                alert("No analysis result found.");
+                window.location.href = "/upload";
+                return;
+            }
+
+            const results = multiData ? JSON.parse(multiData) : [JSON.parse(singleData)];
+            
+            // If multiple results, create a gallery
+            if (results.length > 1) {
+                const galleryContainer = document.createElement('div');
+                galleryContainer.className = 'glass-panel';
+                galleryContainer.style.marginBottom = '20px';
+                galleryContainer.style.padding = '15px';
+                galleryContainer.style.display = 'flex';
+                galleryContainer.style.gap = '10px';
+                galleryContainer.style.overflowX = 'auto';
+                galleryContainer.innerHTML = '<h3 style="width:100%; font-size:14px; margin-bottom:10px; color:var(--text-muted)">All Uploaded Content:</h3>';
+                
+                results.forEach((res, index) => {
+                    const thumb = document.createElement('div');
+                    thumb.style.width = '60px';
+                    thumb.style.height = '60px';
+                    thumb.style.borderRadius = '8px';
+                    thumb.style.overflow = 'hidden';
+                    thumb.style.cursor = 'pointer';
+                    thumb.style.border = index === 0 ? '2px solid var(--primary-green)' : '1px solid var(--border-color)';
+                    thumb.innerHTML = `<img src="${res.image}" style="width:100%; height:100%; object-fit:cover;">`;
+                    thumb.onclick = () => {
+                        // Switch result
+                        renderResult(res);
+                        // Update active thumb
+                        galleryContainer.querySelectorAll('div').forEach(t => t.style.border = '1px solid var(--border-color)');
+                        thumb.style.border = '2px solid var(--primary-green)';
+                    };
+                    galleryContainer.appendChild(thumb);
+                });
+                
+                document.querySelector('.page-container').insertBefore(galleryContainer, document.querySelector('.result-layout'));
+            }
+
+            // Initial render
+            renderResult(results[0]);
+
+            function renderResult(data) {
+                document.getElementById('resImage').src = data.image;
+
+                if (data.is_soil) {
+                    // RENDER SOIL SCAN RESULTS
+                    document.getElementById('resIdentityLabel').textContent = "Soil Report";
+                    document.getElementById('resIdentity').textContent = `${data.soil_type} Soil Type`;
+                    document.getElementById('resDisease').textContent = `Fertility: ${data.fertility_score}%`;
+                    document.getElementById('resDisease').style.color = '#3498db'; // Blue for soil
+                    
+                    document.getElementById('resPlant').parentElement.querySelector('.info-label').textContent = "PH Level";
+                    document.getElementById('resPlant').textContent = data.ph;
+                    
+                    document.getElementById('resPart').parentElement.querySelector('.info-label').textContent = "Organic Matter";
+                    document.getElementById('resPart').textContent = data.organic_matter + '%';
+                    
+                    const locCard = document.getElementById('locationCard');
+                    locCard.innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 5px;">
+                            <div style="text-align: center;"><div class="info-label">N</div><div style="color:white; font-weight:600;">${data.nitrogen}</div></div>
+                            <div style="text-align: center;"><div class="info-label">P</div><div style="color:white; font-weight:600;">${data.phosphorus}</div></div>
+                            <div style="text-align: center;"><div class="info-label">K</div><div style="color:white; font-weight:600;">${data.potassium}</div></div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('resTreatment').textContent = data.recommendation;
+                    const pestLabel = document.getElementById('resPesticide').parentElement.querySelector('.info-label');
+                    if (pestLabel) pestLabel.textContent = "Best Crops to Grow";
+                    document.getElementById('resPesticide').textContent = data.best_crops ? data.best_crops.join(", ") : "Grains, Vegetables";
+                    document.getElementById('resGrade').textContent = "Soil Lab Analysis Grade: Platinum";
+                    
+                    document.getElementById('resConfidenceText').textContent = '99.2%';
+                    document.getElementById('confCircle').style.setProperty('--percent', 99.2);
+
+                    document.getElementById('voiceBtn').onclick = () => {
+                        const text = `Your soil is ${data.soil_type} with a fertility score of ${data.fertility_score} percent. pH level is ${data.ph}. I recommend ${data.recommendation}. The best crops for this soil are ${data.best_crops ? data.best_crops.join(", ") : "many varieties"}.`;
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        speechSynthesis.speak(utterance);
+                    };
+
+                } else {
+                    // RENDER CROP SCAN RESULTS (ORIGINAL)
+                    document.getElementById('resPlant').textContent = data.plant_type || 'Unknown';
+                    document.getElementById('resPart').textContent = data.plant_part || 'Unknown';
+                    document.getElementById('resIdentity').textContent = data.descriptive_name || `Detected ${data.plant_type} (${data.plant_part})`;
+                    document.getElementById('resStatus').textContent = data.status || 'Affected';
+                    document.getElementById('resStatus').style.color = (data.status === 'Healthy') ? 'var(--primary-green)' : 'var(--accent-red)';
+                    document.getElementById('resConfidenceVal').textContent = (data.confidence || 85.5).toFixed(1) + '%';
+                    
+                    if (data.status !== 'Healthy') {
+                        document.getElementById('diseasePestCard').style.display = 'block';
+                        document.getElementById('resDiseaseName').textContent = data.disease_name || 'None';
+                        document.getElementById('resPestName').textContent = data.pest_name || 'None';
+                    } else {
+                        document.getElementById('diseasePestCard').style.display = 'none';
+                    }
+
+                    // Add exact location
+                    const resLocationText = document.getElementById('resLocation');
+                    if (data.disease_location && data.disease_location !== "N/A" && data.disease_location !== "None") {
+                        resLocationText.textContent = data.disease_location;
+                        document.getElementById('locationCard').style.display = 'block';
+                    } else {
+                        document.getElementById('locationCard').style.display = 'none';
+                    }
+
+                    document.getElementById('resConfidenceText').textContent = data.confidence ? data.confidence.toFixed(1) + '%' : '85%';
+                    document.getElementById('confCircle').style.setProperty('--percent', data.confidence || 85);
+
+                    document.getElementById('resTreatment').textContent = data.treatment;
+                    document.getElementById('resPesticide').textContent = data.pesticide;
+                    document.getElementById('resBuyLink').href = data.buy_link || `https://www.amazon.in/s?k=${data.pesticide.replace(' ', '+')}+medicine`;
+
+                    // If Healthy
+                    if (data.status === 'Healthy') {
+                        document.querySelector('.treatment-box').style.display = 'none';
+                        document.getElementById('resGrade').textContent = "Excellent Health - Market Ready";
+                    } else {
+                        document.querySelector('.treatment-box').style.display = 'block';
+                        document.getElementById('resGrade').textContent = "Affected - Treatment Recommended";
+                    }
+
+                    // Enhanced AI Voice Reader (Toggle Start/Stop)
+                    document.getElementById('voiceBtn').onclick = () => {
+                        if (window.speechSynthesis.speaking) {
+                            window.speechSynthesis.cancel();
+                            return; // Just stop if already speaking
+                        }
+
+                        const selLang = document.getElementById('resLangSelect').value;
+                        const text = `The scan shows ${data.plant_type} ${data.plant_part}. Result is ${data.disease_pest}. Recommended treatment: ${data.treatment}. Suggested medicine is ${data.pesticide}.`;
+                        
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.onstart = () => { 
+                             const btnSpan = document.querySelector('#voiceBtn span');
+                             if(btnSpan) btnSpan.textContent = "Stop AI Speech"; 
+                        };
+                        utterance.onend = () => { 
+                             const btnSpan = document.querySelector('#voiceBtn span');
+                             if(btnSpan) btnSpan.textContent = "Listen to AI Diagnosis"; 
+                        };
+
+                        // voice matching for better pronunciation
+                        const voices = window.speechSynthesis.getVoices();
+                        if (voices.length > 0) {
+                            let matchedVoice = voices.find(v => v.lang.replace('_', '-') === selLang);
+                            if (!matchedVoice) matchedVoice = voices.find(v => v.lang.startsWith(selLang.split('-')[0]));
+                            if (matchedVoice) utterance.voice = matchedVoice;
+                        }
+                        
+                        utterance.lang = selLang;
+                        window.speechSynthesis.speak(utterance);
+                    };
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

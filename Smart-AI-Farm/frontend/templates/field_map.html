@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Map | Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .map-header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 500;
+        }
+
+        #farm-map {
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            bottom: 65px;
+            z-index: 1;
+        }
+
+        .map-legend {
+            position: absolute;
+            bottom: 80px;
+            left: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px;
+            z-index: 400;
+            font-size: 13px;
+            min-width: 180px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .side-panel {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            z-index: 400;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .map-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            color: white;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .map-btn:hover {
+            background: var(--primary-green);
+        }
+
+        .zone-popup {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 600;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .nav-item.active,
+        .nav-item:hover {
+            color: var(--primary-green);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .info-card {
+            position: absolute;
+            bottom: 80px;
+            right: 10px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px;
+            z-index: 400;
+            font-size: 13px;
+            min-width: 160px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="map-header">
+        <a href="/dashboard" style="color:var(--text-muted);text-decoration:none;"><i
+                class="fas fa-arrow-left fa-lg"></i></a>
+        <div>
+            <div style="font-weight:700;font-size:1rem;">🛰️ Field Map Monitor</div>
+            <div style="font-size:11px;color:var(--text-muted);">Live farm zones & soil health</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+            <span id="locationDisplay" style="font-size:12px;color:var(--primary-green);"><i
+                    class="fas fa-satellite-dish fa-spin"></i> Locating...</span>
+        </div>
+    </div>
+
+    <div id="farm-map"></div>
+
+    <div class="map-legend">
+        <div style="font-weight:700;margin-bottom:10px;font-size:12px;color:var(--primary-green);">📊 Zone Health</div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#2ecc71"></div> Healthy (NDVI > 0.6)
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#f1c40f"></div> Moderate (NDVI 0.3-0.6)
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#e74c3c"></div> Stressed (NDVI < 0.3)</div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#3498db"></div> Water Body / Canal
+                </div>
+        </div>
+
+        <div class="info-card" id="zoneInfo">
+            <div id="zoneInfoContent"></div>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="/dashboard" class="nav-item"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
+            <a href="/weather" class="nav-item"><i class="fas fa-cloud nav-icon"></i><span>Weather</span></a>
+            <a href="/field-map" class="nav-item active"><i class="fas fa-map nav-icon"></i><span>Field Map</span></a>
+            <a href="/irrigation" class="nav-item"><i class="fas fa-tint nav-icon"></i><span>Irrigate</span></a>
+            <a href="/schemes" class="nav-item"><i
+                    class="fas fa-hand-holding-dollar nav-icon"></i><span>Schemes</span></a>
+        </nav>
+
+        <script>
+            const map = L.map('farm-map').setView([11.1271, 78.6569], 14);
+
+            // Use OpenStreetMap satellite-style layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Zone data with simulated NDVI / soil moisture
+            const zones = [
+                {
+                    coords: [[11.1290, 78.655], [11.1285, 78.657], [11.1270, 78.656], [11.1274, 78.654]],
+                    color: '#2ecc71', fillOpacity: 0.35, label: 'Zone A — Healthy',
+                    ndvi: '0.72', moisture: '68%', crop: 'Rice', alert: '✅ All good. Continue normal irrigation.'
+                },
+                {
+                    coords: [[11.126, 78.658], [11.125, 78.660], [11.124, 78.659], [11.1255, 78.657]],
+                    color: '#f1c40f', fillOpacity: 0.4, label: 'Zone B — Moderate Stress',
+                    ndvi: '0.44', moisture: '42%', crop: 'Wheat', alert: '⚠️ Monitor closely. Consider irrigation.'
+                },
+                {
+                    coords: [[11.128, 78.652], [11.127, 78.654], [11.126, 78.653], [11.1265, 78.651]],
+                    color: '#e74c3c', fillOpacity: 0.4, label: 'Zone C — High Stress',
+                    ndvi: '0.21', moisture: '18%', crop: 'Cotton', alert: '🚨 CRITICAL: Irrigate immediately! Moisture very low.'
+                },
+                {
+                    coords: [[11.130, 78.658], [11.129, 78.661], [11.128, 78.660], [11.1285, 78.657]],
+                    color: '#3498db', fillOpacity: 0.3, label: 'Canal / Water Source',
+                    ndvi: 'N/A', moisture: '100%', crop: 'Water body', alert: '💧 Irrigation water source available.'
+                }
+            ];
+
+            zones.forEach((z, i) => {
+                const polygon = L.polygon(z.coords, {
+                    color: z.color, weight: 2, fillColor: z.color, fillOpacity: z.fillOpacity
+                }).addTo(map);
+
+                polygon.bindTooltip(`<b>${z.label}</b><br>NDVI: ${z.ndvi} | Moisture: ${z.moisture}`, { permanent: false, sticky: true });
+
+                polygon.on('click', () => {
+                    const card = document.getElementById('zoneInfo');
+                    document.getElementById('zoneInfoContent').innerHTML = `
+            <div style="font-weight:700;margin-bottom:8px;color:${z.color}">${z.label}</div>
+            <div style="font-size:12px;color:var(--text-muted)">Crop: ${z.crop}</div>
+            <div style="font-size:12px;color:var(--text-muted)">NDVI: ${z.ndvi}</div>
+            <div style="font-size:12px;color:var(--text-muted)">Moisture: ${z.moisture}</div>
+            <div style="margin-top:10px;font-size:12px;">${z.alert}</div>
+        `;
+                    card.style.display = 'block';
+                });
+            });
+
+            // Auto-locate user
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const { latitude: lat, longitude: lon } = pos.coords;
+                    map.setView([lat, lon], 15);
+                    L.marker([lat, lon]).addTo(map)
+                        .bindPopup('<b>📍 Your Location</b>').openPopup();
+                    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, { headers: { 'User-Agent': 'SmartFarmApp/1.0' } })
+                        .then(r => r.json())
+                        .then(d => {
+                            const city = d.address?.city || d.address?.town || d.address?.village || 'Your Farm';
+                            document.getElementById('locationDisplay').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${city}`;
+                        });
+                }, () => {
+                    document.getElementById('locationDisplay').innerHTML = '<i class="fas fa-map-marker-alt"></i> Demo Location';
+                });
+            }
+
+            map.on('click', () => {
+                document.getElementById('zoneInfo').style.display = 'none';
+            });
+        </script>
+</body>
+
+</html>

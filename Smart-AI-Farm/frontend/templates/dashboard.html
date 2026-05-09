@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#2ecc71">
+    <title>Dashboard - Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .dashboard-container {
+            padding: calc(60px + env(safe-area-inset-top)) 15px calc(90px + env(safe-area-inset-bottom));
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: calc(10px + env(safe-area-inset-top)) 20px 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .grid-container {
+            display: grid;
+            gap: 24px;
+        }
+
+        @media (min-width: 769px) {
+            .grid-container {
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            }
+        }
+
+        .card {
+            padding: 24px;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: var(--primary-green);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+            z-index: 1000;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 6px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active,
+        .nav-item:hover {
+            color: var(--primary-green);
+        }
+
+        .nav-icon {
+            font-size: 22px;
+        }
+
+        /* Specific widgets */
+        .weather-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .temp {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 800;
+            letter-spacing: -2px;
+            background: linear-gradient(to bottom, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .alert-item {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--accent-red);
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: var(--accent-red);
+            margin-bottom: 4px;
+        }
+
+        .market-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .market-item:last-child {
+            border-bottom: none;
+        }
+
+        .view-toggle-btn {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            color: var(--primary-green);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .view-toggle-btn:hover {
+            background: rgba(46, 204, 113, 0.1);
+            border-color: var(--primary-green);
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(46, 204, 113, 0.4);
+            z-index: 99;
+            text-decoration: none;
+            transition: transform 0.3s;
+        }
+
+        .floating-action:hover {
+            transform: scale(1.1);
+            color: white;
+        }
+
+        .notification-icon-wrapper {
+            position: relative;
+            cursor: pointer;
+            width: 35px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: white;
+            border: 1px solid var(--border-color);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 1px solid var(--bg-dark);
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Location Gate */
+        #locationGate {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        #locationGate i {
+            font-size: 4rem;
+            color: var(--primary-green);
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        #locationGate h2 { margin-bottom: 10px; }
+        #locationGate p { color: var(--text-muted); margin-bottom: 30px; max-width: 400px; line-height: 1.6; }
+        
+        .enable-btn {
+            background: var(--primary-green);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .enable-btn:hover { transform: scale(1.05); }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-20px);}
+            60% {transform: translateY(-10px);}
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container { padding: 80px 15px 100px; }
+            .temp { font-size: 2.5rem; }
+            .grid-container { gap: 16px; }
+            .card { padding: 20px; }
+        }
+
+        /* Premium Motivational Scroller */
+        .scroller-container {
+            background: linear-gradient(90deg, rgba(46, 204, 113, 0.1), transparent, rgba(46, 204, 113, 0.1));
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 0;
+            overflow: hidden;
+            position: relative;
+            margin: 15px -20px 25px;
+        }
+
+        .scroller-content {
+            display: flex;
+            white-space: nowrap;
+            width: max-content;
+            animation: scroll-left 500s linear infinite;
+            animation: scroll-left 600s linear infinite;
+        }
+
+        .real-time-clock {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 8px 18px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .clock-time {
+            color: var(--primary-green);
+            font-weight: 800;
+            font-size: 1.2rem;
+            margin-right: 5px;
+        }
+
+        .clock-date-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .scroller-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 40px;
+            padding-right: 40px;
+            color: #ecf0f1;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .scroller-item span {
+            color: var(--primary-green);
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            background: rgba(46, 204, 113, 0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 8px;
+        }
+
+        @keyframes scroll-left {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Location Permission Gate -->
+    <div id="locationGate">
+        <div style="background: var(--bg-card); padding: 40px; border-radius: 24px; border: 1px solid var(--border-color); box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-width: 500px; width: 90%;">
+            <i class="fas fa-map-marker-alt"></i>
+            <h2 style="font-size: 24px; margin-bottom: 15px;">Exact Farm Location</h2>
+            <p>To provide 100% accurate weather and disaster alerts, we need your location.</p>
+            
+            <div id="gpsSection">
+                <button class="enable-btn" onclick="requestPermission()" style="width: 100%; margin-bottom: 20px; background: linear-gradient(135deg, var(--primary-green), #27ae60); border: none; padding: 15px; border-radius: 12px; font-weight: 700; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px;">
+                    <i class="fas fa-location-arrow"></i> Turn on Exact Location
+                </button>
+                <div style="margin: 10px 0; color:var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">— Or Manual Entry —</div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <input type="text" id="manualCity" placeholder="Enter City (e.g. Chennai)" 
+                    style="flex: 1; padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: white;">
+                <button onclick="setManualLocation()" style="background: var(--primary-green); color: white; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; font-weight:600;">Go</button>
+            </div>
+
+            <button onclick="skipLocation()" style="background: transparent; color: var(--text-muted); border: none; margin-top: 15px; cursor: pointer; text-decoration: underline; font-size: 13px;">Skip & Use Default (Chennai)</button>
+            
+            <div id="gateError" style="background: rgba(46, 204, 113, 0.1); border: 1px solid var(--primary-green); padding: 15px; border-radius: 12px; color:white; margin-top:20px; font-size:13px; line-height:1.5; text-align: left;">
+                <i class="fas fa-info-circle" style="font-size: 18px; margin-bottom: 8px; display: block; color: var(--primary-green);"></i>
+                <strong>GPS ACCESS INFO</strong><br>
+                Browsers only allow Exact GPS on <b>HTTPS</b> or <b>localhost</b>. 
+                If you are on a phone, please use the <b>Manual Entry</b> box above to type your city.
+            </div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="auth-logo" style="width: 40px; height: 40px; margin: 0; font-size: 18px; border-radius: 10px;">
+                <i class="fas fa-leaf"></i>
+            </div>
+            <h2 style="font-size: 1.2rem; font-weight: 700;">Smart AI Farm</h2>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <div id="voiceAssistantBtn"
+                style="cursor:pointer; color: var(--primary-green); font-size: 1.2rem; margin-right: 5px;">
+                <i class="fas fa-microphone"></i>
+            </div>
+
+            <!-- Notification Badge System -->
+            <div class="notification-icon-wrapper" onclick="window.location.href='/news'">
+                <i class="fas fa-bell"></i>
+                <div class="notification-badge" id="notifBadge">0</div>
+            </div>
+
+            <a href="/profile"
+                style="width: 35px; height: 35px; border-radius: 50%; background: var(--bg-card); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); color: white; text-decoration: none;">
+                <i class="fas fa-user"></i>
+            </a>
+        </div>
+    </header>
+
+    <div class="dashboard-container animate-fade-in">
+        <h1 style="margin-bottom: 10px; font-size: 24px;">Welcome back, <span
+                style="color: var(--primary-green)">Farmer!</span></h1>
+
+        <div class="real-time-clock">
+            <span class="clock-time" id="liveClock">00:00:00</span>
+            <span style="color: rgba(255,255,255,0.2); font-size: 1.2rem;">|</span>
+            <span id="liveDay" style="color: white; font-weight: 600;">Day</span>
+            <span style="color: var(--primary-green);">•</span>
+            <span id="liveDate">Date</span>
+        </div>
+
+        <!-- Dynamic Horizontal Motivational Scroller -->
+        <div class="scroller-container">
+            <div class="scroller-content" id="motivationScroller">
+                <!-- Data will be injected here by JS -->
+            </div>
+        </div>
+
+        <!-- Farmer Identity Card Promotion -->
+        <div class="animate-fade-in" style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.15), rgba(0,0,0,0.3)); border: 1px solid var(--accent-gold); border-radius: 16px; padding: 15px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 45px; height: 45px; background: rgba(241, 196, 15, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-gold); font-size: 20px;">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div>
+                    <h4 style="color: white; margin: 0; font-size: 15px; font-weight: 700;">Tamil Nadu Farmer ID Card</h4>
+                    <p style="color: var(--text-muted); margin: 0; font-size: 12px;">Essential for Subsidies & Uzhavar Santhai</p>
+                </div>
+            </div>
+            <a href="/schemes" class="btn-farm" style="padding: 8px 16px; font-size: 13px; background: var(--accent-gold); color: black; border: none; white-space: nowrap;">Apply Now</a>
+        </div>
+
+        <div class="grid-container">
+            <!-- Weather Widget -->
+            <div class="glass-panel card">
+                <div class="card-title"><i class="fas fa-cloud-sun"></i> Live Weather</div>
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                    <span id="wLoc"><i class="fas fa-satellite-dish"></i> Initializing GPS...</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="gpsStatus" style="font-size: 9px; color: #2ecc71; display: none;"><i class="fas fa-circle-notch fa-spin"></i> LIVE TRACKING</span>
+                        <i class="fas fa-edit" style="cursor: pointer; color: #f1c40f; padding: 5px;" title="Set Location Manually" 
+                            onclick="forceManualLocation()"></i>
+                        <i class="fas fa-sync-alt" id="refreshLoc" style="cursor: pointer; color: var(--primary-green); padding: 5px;" title="Refresh GPS" 
+                            onclick="resetAndRequestGPS()"></i>
+                    </div>
+                </div>
+                <div class="weather-info" id="weatherContent">
+                    <div class="temp">--°</div>
+                    <div style="text-align: right; color: var(--text-muted);">
+                        <div id="weatherCond" style="font-size: 1.2rem; color: white; margin-bottom: 5px;">Loading...
+                        </div>
+                        <div>Humidity: <span id="weatherHum">--</span>%</div>
+                        <div style="font-size: 0.75rem;">Wind: <span id="weatherWind">--</span> km/h</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Widget -->
+            <div class="glass-panel card">
+                <div class="card-title" style="color: var(--accent-red); display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fas fa-exclamation-triangle"></i> Farm Alerts</span>
+                    <span id="alertsStatus" style="font-size: 10px; font-weight: 400; color: var(--text-muted); text-transform: uppercase;">Live</span>
+                </div>
+                <div id="alertsContainer">
+                    <div style="color: var(--text-muted); padding: 10px 0;">Loading alerts...</div>
+                </div>
+                <button id="toggleAlertsBtn" class="view-toggle-btn" style="display: none;">
+                    <span id="alertsToggleText">View More</span>
+                    <i class="fas fa-chevron-down" id="alertsToggleIcon"></i>
+                </button>
+            </div>
+
+            <!-- 7-Day Disaster Forecast Widget -->
+            <div class="glass-panel card">
+                <div class="card-title" style="color: #3498db; display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fas fa-calendar-alt"></i> 7-Day Safety Forecast</span>
+                    <span style="font-size: 9px; background: rgba(52, 152, 219, 0.2); padding: 2px 6px; border-radius: 4px;">PROACTIVE</span>
+                </div>
+                <div id="forecastContainer">
+                    <div style="color: var(--text-muted); padding: 10px 0;">Calculating forecast...</div>
+                </div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: var(--text-muted);">
+                    <i class="fas fa-shield-alt"></i> Plan your harvests and activities with confidence.
+                </div>
+            </div>
+
+            <!-- Satellite / Crop Health -->
+            <div class="glass-panel card">
+                <div class="card-title"><i class="fas fa-satellite"></i> Satellite Monitoring</div>
+                <div id="satelliteContainer">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                        <span style="color: var(--text-muted);">NDVI Index</span>
+                        <strong style="color: var(--primary-green);" id="satNdvi">0.00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                        <span style="color: var(--text-muted);">Health Status</span>
+                        <strong id="satHealth">Loading...</strong>
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);" id="satStress"></p>
+                </div>
+            </div>
+
+            <!-- Market Prices -->
+            <div class="glass-panel card">
+                <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fas fa-chart-line"></i> Market Prices Today</span>
+                    <i class="fas fa-info-circle" style="font-size: 14px; opacity: 0.5;"></i>
+                </div>
+                <div id="marketContainer">
+                    <div style="padding: 10px 0;">
+                        <div class="skeleton" style="height: 45px; margin-bottom: 12px;"></div>
+                        <div class="skeleton" style="height: 45px; margin-bottom: 12px;"></div>
+                        <div class="skeleton" style="height: 45px;"></div>
+                    </div>
+                </div>
+                <button id="toggleMarketBtn" class="view-toggle-btn" style="display: none;">
+                    <span id="toggleText">View More</span>
+                    <i class="fas fa-chevron-down" id="toggleIcon"></i>
+                </button>
+            </div>
+
+            <!-- Upcoming Tasks Widget -->
+            <div class="glass-panel card">
+                <div class="card-title" style="color: #f1c40f;"><i class="fas fa-tasks"></i> Upcoming Tasks</div>
+                <div id="upcomingTasks" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div
+                        style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border-left: 3px solid #f1c40f;">
+                        <div style="font-weight: 600; font-size: 14px;">Irrigate Field B</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Scheduled for Tomorrow, 6:00 AM</div>
+                    </div>
+                    <div
+                        style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border-left: 3px solid var(--primary-green);">
+                        <div style="font-weight: 600; font-size: 14px;">Apply Fertilizer</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Week 4 routine for Tomato</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Advisory Widget -->
+            <div class="glass-panel card">
+                <div class="card-title" style="color: #3498db;"><i class="fas fa-lightbulb"></i> AI Advisory</div>
+                <div
+                    style="background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 12px; font-size: 14px; line-height: 1.5;">
+                    <i class="fas fa-robot" style="margin-right: 5px;"></i> "Based on the upcoming rain, I suggest
+                    <b>Harvesting your Tomato</b> by this weekend to avoid fruit rot."
+                </div>
+                <a href="/chatbot"
+                    style="display: block; margin-top: 15px; color: #3498db; font-size: 13px; text-decoration: none; font-weight: 600;">Ask
+                    AI more <i class="fas fa-chevron-right" style="font-size: 10px;"></i></a>
+            </div>
+
+            <!-- Farm Features Array -->
+            <div class="glass-panel card"
+                style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.05)); grid-column: 1 / -1;">
+                <div class="card-title"><i class="fas fa-th-large"></i> Farm Management Tools</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 12px;">
+                    <a href="/irrigation"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#3498db'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-tint fa-xl" style="color:#3498db"></i> Smart Irrigation
+                    </a>
+                    <a href="/profit"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#2ecc71'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-chart-line fa-xl" style="color:#2ecc71"></i> Profit Calc
+                    </a>
+                    <a href="/field-map"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#e67e22'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-satellite fa-xl" style="color:#e67e22"></i> Field Map
+                    </a>
+                    <a href="/store"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#e74c3c'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-store fa-xl" style="color:#e74c3c"></i> Agri Store
+                    </a>
+                    <a href="/calendar"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#8e44ad'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-calendar-alt fa-xl" style="color:#8e44ad"></i> Crop Calendar
+                    </a>
+                    <a href="/yield"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#27ae60'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-seedling fa-xl" style="color:#27ae60"></i> Yield Predict
+                    </a>
+                    <a href="/news"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#2980b9'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-newspaper fa-xl" style="color:#2980b9"></i> Agri News
+                    </a>
+                    <a href="/schemes"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#f1c40f'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-hand-holding-dollar fa-xl" style="color:#f1c40f"></i> Apply Govt Loans
+                    </a>
+                    <a href="/wallet"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#2E7D32'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.15)'">
+                        <i class="fas fa-wallet fa-xl" style="color:#2E7D32"></i> Govt Subsidy Wallet
+                    </a>
+                    <a href="/calculators"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#f39c12'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-calculator fa-xl" style="color:#f39c12"></i> Fast Calc
+                    </a>
+                    <a href="/market"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#e67e22'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-chart-line fa-xl" style="color:#e67e22"></i> Market Prices
+                    </a>
+                    <a href="/community"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#1abc9c'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-users fa-xl" style="color:#1abc9c"></i> Community
+                    </a>
+                    <a href="/rental"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#d35400'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-tractor fa-xl" style="color:#d35400"></i> Tool Rental
+                    </a>
+                    <a href="/emergency"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#e74c3c'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fas fa-ambulance fa-xl" style="color:#e74c3c"></i> Emergency Help
+                    </a>
+                    <a href="/whatsapp-connect"
+                        style="text-decoration:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:16px;gap:8px;transition:all 0.2s;color:white;font-size:13px;font-weight:600;text-align:center;"
+                        onmouseover="this.style.borderColor='#25d366'"
+                        onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                        <i class="fab fa-whatsapp fa-xl" style="color:#25d366"></i> WhatsApp Connect
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Scan FAB -->
+    <a href="/upload" class="floating-action" style="right: 90px; background: linear-gradient(135deg, #10b981, #059669);" title="AI Scan">
+        <i class="fas fa-camera"></i>
+    </a>
+
+    <!-- Gemini Style Voice FAB -->
+    <div class="floating-action" onclick="openVoiceMode()" style="right: 20px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); cursor:pointer;" title="Gemini Live Voice">
+        <i class="fas fa-microphone-alt"></i>
+    </div>
+
+    <!-- Full Screen Voice Assistant Overlay (Gemini Style) -->
+    <div id="voiceOverlay" style="position: fixed; inset: 0; background: linear-gradient(135deg, #020617, #0f172a, #1e1b4b); z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; opacity: 0; transition: opacity 0.3s ease;">
+        <button onclick="closeVoiceMode()" style="position: absolute; top: 30px; left: 30px; background: rgba(255, 255, 255, 0.1); border: none; border-radius: 50%; width: 50px; height: 50px; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="fas fa-times"></i></button>
+        <div style="position: absolute; top: 30px; right: 30px; display: flex; gap: 10px;">
+            <select id="voiceLangSelect" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 8px 15px; border-radius: 20px; font-size: 14px; outline: none; cursor: pointer;">
+                <option value="en-US">English</option>
+                <option value="ta-IN">தமிழ் (Tamil)</option>
+                <option value="hi-IN">हिंदी (Hindi)</option>
+                <option value="te-IN">తెలుగు (Telugu)</option>
+            </select>
+        </div>
+        <div style="color: rgba(255,255,255,0.5); font-size: 18px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;"><i class="fas fa-robot"></i> Smart AI Live</div>
+        <div id="giantMicBtn" style="width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-size: 60px; cursor: pointer; box-shadow: 0 0 50px rgba(16, 185, 129, 0.3); transition: all 0.3s; margin-bottom: 50px; position: relative;">
+            <i class="fas fa-microphone"></i>
+        </div>
+        <style>
+            .listening-ring { animation: pulse-ring-live 1.5s infinite; background: linear-gradient(135deg, #ef4444, #dc2626) !important; box-shadow: 0 0 80px rgba(239, 68, 68, 0.6) !important; }
+            @keyframes pulse-ring-live {
+                0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+                70% { transform: scale(1); box-shadow: 0 0 0 40px rgba(239, 68, 68, 0); }
+                100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            }
+        </style>
+        <div id="voiceTranscript" style="font-size: 28px; font-weight: 300; text-align: center; max-width: 80%; line-height: 1.4; color: rgba(255, 255, 255, 0.9); min-height: 80px;">Tap the mic to start Gemini Live...</div>
+        <div id="voiceAIReply" style="font-size: 20px; font-weight: 400; text-align: center; max-width: 80%; color: #10b981; margin-top: 30px; font-style: italic;"></div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item active">
+            <i class="fas fa-home nav-icon"></i>
+            <span>Home</span>
+        </a>
+        <a href="/weather" class="nav-item">
+            <i class="fas fa-cloud nav-icon"></i>
+            <span>Weather</span>
+        </a>
+        <a href="/chatbot" class="nav-item">
+            <i class="fas fa-robot nav-icon"></i>
+            <span>AI Bot</span>
+        </a>
+        <a href="/reminder" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i>
+            <span>Reminders</span>
+        </a>
+        <a href="/emergency" class="nav-item">
+            <i class="fas fa-phone-alt nav-icon"></i>
+            <span>Emergency</span>
+        </a>
+    </nav>
+
+    <script>
+        let allMarketData = [];
+        let isMarketExpanded = false;
+        let allAlertsData = [];
+        let isAlertsExpanded = false;
+        let refreshTimer = null;
+
+        // Fetch Dashboard Data
+        async function skipLocation() {
+            localStorage.setItem('userCity', 'Chennai');
+            loadDashboardData(null, null, "Chennai");
+            document.getElementById('locationGate').style.display = 'none';
+        }
+
+        async function setManualLocation() {
+            const city = document.getElementById('manualCity').value.trim();
+            if (city) {
+                localStorage.setItem('userCity', city);
+                loadDashboardData(null, null, city);
+                document.getElementById('locationGate').style.display = 'none';
+            } else {
+                alert("Please enter a city name.");
+            }
+        }
+
+        let watchId = null;
+
+        function forceManualLocation() {
+            const city = prompt("GPS accuracy depends on your internet provider.\n\nEnter your exact City, Town, or Village name for accurate results:");
+            if (city && city.trim() !== '') {
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                localStorage.setItem('userCity', city.trim());
+                localStorage.removeItem('userLat');
+                localStorage.removeItem('userLon');
+                loadDashboardData(null, null, city.trim());
+            }
+        }
+
+        function resetAndRequestGPS() {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            localStorage.removeItem('userLat');
+            localStorage.removeItem('userLon');
+            localStorage.removeItem('userCity');
+            requestPermission();
+        }
+
+        async function requestPermission() {
+            document.getElementById('gateError').style.display = 'block';
+            const statusText = document.querySelector('#locationGate p');
+            
+            if ("geolocation" in navigator) {
+                statusText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating Your Farm...<br><span style="font-size:11px; color:var(--primary-green)">Trying to find your exact crop field coordinates (7s max).</span>';
+                
+                // Reduced timeout to 7 seconds as requested
+                const options = { enableHighAccuracy: true, timeout: 7000, maximumAge: 30000 };
+                
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+                        document.getElementById('locationGate').style.display = 'none';
+                        loadDashboardData(lat, lon);
+                        
+                        // Start tracking in background
+                        if (watchId) navigator.geolocation.clearWatch(watchId);
+                        watchId = navigator.geolocation.watchPosition(
+                            (wPos) => {
+                                const wLat = wPos.coords.latitude;
+                                const wLon = wPos.coords.longitude;
+                                document.getElementById('gpsStatus').style.display = 'inline-block';
+                                const oldLat = localStorage.getItem('userLat');
+                                if (!oldLat || Math.abs(parseFloat(oldLat) - wLat) > 0.005) {
+                                    loadDashboardData(wLat, wLon);
+                                }
+                            },
+                            (err) => console.warn("Background GPS lost:", err),
+                            { ...options, timeout: 30000 } // Watch can take longer in background
+                        );
+                    },
+                    (err) => {
+                        console.warn("GPS Fail:", err);
+                        
+                        // 7s FAIL-SAFE: If GPS fails or times out, immediately use last known or default
+                        const lastLat = localStorage.getItem('userLat');
+                        const lastLon = localStorage.getItem('userLon');
+                        const lastCity = localStorage.getItem('userCity');
+
+                        if (lastLat && lastLon) {
+                            console.log("Using cached GPS fallback");
+                            document.getElementById('locationGate').style.display = 'none';
+                            loadDashboardData(lastLat, lastLon);
+                        } else if (lastCity) {
+                            console.log("Using cached City fallback");
+                            document.getElementById('locationGate').style.display = 'none';
+                            loadDashboardData(null, null, lastCity);
+                        } else if (err.code !== 1) { // Not permission denied
+                            console.log("Auto-fallback to Default");
+                            skipLocation(); // Automatically clicks "Chennai" for the user
+                        } else {
+                            // Permission was actually denied - tell them how to fix
+                            let errorMsg = "Please allow location in browser settings.";
+                            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                                errorMsg = "GPS requires HTTPS for network access. <b>Please use the Manual Entry box below instead.</b>";
+                            }
+                            statusText.innerHTML = `<span style="color:var(--accent-red)"><i class="fas fa-lock"></i> SENSOR BLOCKED</span><br>${errorMsg}`;
+                        }
+                    },
+                    options
+                );
+            } else {
+                statusText.innerHTML = "GPS is not supported by this browser.";
+            }
+        }
+
+        function startDashboardLoad() {
+             const lat = localStorage.getItem('userLat');
+             const lon = localStorage.getItem('userLon');
+             const city = localStorage.getItem('userCity');
+             
+             if (city || (lat && lon)) {
+                 document.getElementById('locationGate').style.display = 'none';
+                 loadDashboardData(lat, lon, city);
+             } else {
+                 document.getElementById('locationGate').style.display = 'flex';
+             }
+        }
+
+        async function loadDashboardData(lat, lon, cityName = null) {
+            // Persistence
+            if (cityName) {
+                localStorage.setItem('userCity', cityName);
+                localStorage.removeItem('userLat');
+                localStorage.removeItem('userLon');
+            } else if (lat && lon) {
+                localStorage.setItem('userLat', lat);
+                localStorage.setItem('userLon', lon);
+                localStorage.removeItem('userCity');
+            }
+
+            let queryParams = '';
+            if (cityName) queryParams = `?city=${encodeURIComponent(cityName)}`;
+            else if (lat && lon) queryParams = `?lat=${lat}&lon=${lon}`;
+
+            // 1. Weather
+            // Show intended location immediately for better UX
+            const displayLoc = cityName || (lat ? "GPS Coordinates" : "Default Region");
+            document.getElementById('wLoc').innerHTML = `<i class="fas fa-map-marker-alt" style="color:var(--accent-red)"></i> ` + displayLoc;
+
+            try {
+                const wRes = await fetch('/api/weather' + queryParams);
+                const wData = await wRes.json();
+                document.getElementById('wLoc').innerHTML = `<i class="fas fa-map-marker-alt" style="color:var(--accent-red)"></i> ` + wData.location;
+                document.querySelector('.temp').textContent = wData.current.temp + '°';
+                document.getElementById('weatherCond').textContent = wData.current.condition;
+                document.getElementById('weatherHum').textContent = wData.current.humidity;
+                document.getElementById('weatherWind').textContent = wData.current.wind;
+            } catch (e) { 
+                console.error("Weather load fail"); 
+                document.getElementById('weatherCond').textContent = 'Live Data Unavailable';
+                // Keep the location name instead of showing 'unavailable'
+                if (!document.getElementById('wLoc').textContent.includes(displayLoc)) {
+                    document.getElementById('wLoc').textContent = displayLoc;
+                }
+                
+                const weatherHumElement = document.getElementById('weatherHum');
+                if (weatherHumElement) weatherHumElement.textContent = 'Check App';
+                const weatherWindElement = document.getElementById('weatherWind');
+                if (weatherWindElement) weatherWindElement.textContent = 'Check App';
+            }
+
+            // 2. Market Prices
+            fetchMarketPrices(queryParams);
+
+            // 3. Alerts & Forecast
+            try {
+                const aRes = await fetch('/api/alerts' + queryParams);
+                const aData = await aRes.json();
+                allAlertsData = aData.disaster;
+                renderAlertsItems();
+                renderForecastItems(aData.forecast);
+                
+                const btn = document.getElementById('toggleAlertsBtn');
+                btn.style.display = allAlertsData.length > 2 ? 'flex' : 'none';
+            } catch (e) { console.error("Alerts load fail"); }
+
+            // 4. Notifications
+            fetchNotifications(lat, lon, cityName);
+
+            // 5. Satellite Data
+            try {
+                const sRes = await fetch('/api/satellite-data');
+                const sData = await sRes.json();
+                document.getElementById('satNdvi').textContent = sData.ndvi_index;
+                document.getElementById('satHealth').textContent = sData.crop_health_status;
+                document.getElementById('satStress').textContent = "Note: " + sData.stress_areas;
+            } catch (e) { }
+
+            // Set auto-refresh (5 mins)
+            if (refreshTimer) clearInterval(refreshTimer);
+            refreshTimer = setInterval(() => loadDashboardData(lat, lon, cityName), 300000);
+        }
+
+        async function fetchMarketPrices(queryParams) {
+            try {
+                const res = await fetch('/api/market-prices' + queryParams);
+                allMarketData = await res.json();
+                renderMarketItems();
+                
+                const btn = document.getElementById('toggleMarketBtn');
+                btn.style.display = allMarketData.length > 3 ? 'flex' : 'none';
+            } catch (e) {
+                document.getElementById('marketContainer').innerHTML = "Failed to load prices.";
+            }
+        }
+
+        function renderMarketItems() {
+            const container = document.getElementById('marketContainer');
+            container.innerHTML = '';
+            const displayData = isMarketExpanded ? allMarketData : allMarketData.slice(0, 3);
+            displayData.forEach(item => {
+                const color = item.trend === 'Up' ? '#2ecc71' : (item.trend === 'Down' ? '#e74c3c' : '#bdc3c7');
+                const icon = item.trend === 'Up' ? 'fa-arrow-up' : (item.trend === 'Down' ? 'fa-arrow-down' : 'fa-minus');
+                const badge = item.is_local ? `<span style="background:#2ecc71; color:black; font-size:9px; padding:1px 4px; border-radius:3px; margin-left:5px; font-weight:700;">NEARBY</span>` : '';
+                container.innerHTML += `
+                    <div class="market-item">
+                        <div>
+                            <div style="font-weight: 600;">${item.crop} ${badge}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); opacity:0.8;">${item.market}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700; color: white;">${item.price}</div>
+                            <div style="font-size: 0.75rem; color: ${color}; font-weight:600;"><i class="fas ${icon}"></i> ${item.trend}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderForecastItems(forecastData) {
+            const container = document.getElementById('forecastContainer');
+            container.innerHTML = '';
+            
+            if (!forecastData || forecastData.length === 0) {
+                container.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; padding: 20px 0; text-align: center;">
+                        <i class="fas fa-sun" style="font-size: 24px; color: #f1c40f; margin-bottom: 10px;"></i>
+                        <div style="color: white; font-weight: 600; font-size: 14px;">Clear Skies Ahead</div>
+                        <div style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">No major disasters predicted for the next 7 days.</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            forecastData.forEach(item => {
+                let riskColor = item.risk_level === 'High' ? 'var(--accent-red)' : '#f1c40f';
+                let icon = item.type.includes('Rain') ? 'fa-cloud-showers-heavy' : (item.type.includes('Wind') ? 'fa-wind' : 'fa-temperature-high');
+                
+                container.innerHTML += `
+                    <div style="display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center;">
+                        <div style="width: 45px; text-align: center;">
+                            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">${item.date.split(',')[0].substring(0, 3)}</div>
+                            <div style="font-weight: 700; color: white;">${item.date.split(' ')[1]}</div>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 12px; font-weight: 600; color: ${riskColor};">
+                                    <i class="fas ${icon}"></i> ${item.type}
+                                </span>
+                                <span style="font-size: 9px; padding: 1px 4px; border-radius: 3px; background: rgba(0,0,0,0.2); color: white;">${item.risk_level}</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${item.message}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderAlertsItems() {
+            const container = document.getElementById('alertsContainer');
+            container.innerHTML = '';
+            if (!allAlertsData || allAlertsData.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted); font-size:14px; padding: 15px 0;">No immediate threats detected. Your farm is safe!</div>';
+                return;
+            }
+            // Show only top 3 unless expanded
+            const displayData = isAlertsExpanded ? allAlertsData : allAlertsData.slice(0, 3);
+            displayData.forEach(item => {
+                let dText = item.distance ? ` <span style="font-size:10px; opacity:0.7;">(${item.distance}km away)</span>` : '';
+                let riskColor = item.risk_level === 'High' ? 'var(--accent-red)' : (item.risk_level === 'Medium' ? '#f1c40f' : '#3498db');
+                let riskIcon = item.risk_level === 'High' ? 'fa-radiation' : (item.risk_level === 'Medium' ? 'fa-exclamation-circle' : 'fa-info-circle');
+                
+                container.innerHTML += `
+                    <div class="alert-item" style="border-left: 4px solid ${riskColor}; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 10px; animation: fadeIn 0.4s ease-out;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                            <span style="font-weight: 700; color: ${riskColor}; font-size: 13px;">
+                                <i class="fas ${riskIcon}"></i> ${item.type.toUpperCase()}
+                            </span>
+                            ${dText}
+                        </div>
+                        <div style="font-size: 0.85rem; color: white; margin-bottom: 8px; line-height: 1.4;">${item.message}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
+                            <i class="fas fa-hand-holding-medical"></i> Action: ${item.action}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            const btn = document.getElementById('toggleAlertsBtn');
+            btn.style.display = allAlertsData.length > 3 ? 'flex' : 'none';
+        }
+
+        document.getElementById('toggleMarketBtn').addEventListener('click', () => {
+            isMarketExpanded = !isMarketExpanded;
+            document.getElementById('toggleText').textContent = isMarketExpanded ? 'Show Less' : 'View More';
+            document.getElementById('toggleIcon').className = isMarketExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+            renderMarketItems();
+        });
+
+        document.getElementById('toggleAlertsBtn').addEventListener('click', () => {
+            isAlertsExpanded = !isAlertsExpanded;
+            document.getElementById('alertsToggleText').textContent = isAlertsExpanded ? 'Show Less' : 'View More';
+            document.getElementById('alertsToggleIcon').className = isAlertsExpanded ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+            renderAlertsItems();
+        });
+
+        // Motivation Scroller
+        const farmerQuotes = [
+            { en: "Agriculture is our wisest pursuit.", ta: "விவசாயமே உலகின் மிகச்சிறந்த தொழில்." },
+            { en: "Eat today? Thank a farmer.", ta: "இன்று நீங்கள் சாப்பிட்டீர்கள் என்றால், ஒரு விவசாயிக்கு நன்றி சொல்லுங்கள்." },
+            { en: "Farmers are the backbone of the nation.", ta: "விவசாயிகள் நாட்டின் முதுகெலும்பு." },
+            { en: "The farmer's soul is in the soil.", ta: "விவசாயியின் ஆன்மா மண்ணில் உள்ளது." },
+            { en: "Every seed is a promise of tomorrow.", ta: "ஒவ்வொரு விதையும் நாளைய நம்பிக்கையின் வாக்குறுதி." },
+            { en: "Agriculture is the art of feeding the world.", ta: "விவசாயம் என்பது உலகிற்கு உணவளிக்கும் கலை." }
+        ];
+
+        function initMotivationScroller() {
+            const scroller = document.getElementById('motivationScroller');
+            const shuffled = [...farmerQuotes].sort(() => 0.5 - Math.random());
+            let html = '<div class="scroller-item">';
+            shuffled.forEach(q => {
+                html += `<span>EN:</span> ${q.en} <i class="fas fa-seedling" style="margin:0 15px; color:#2ecc71"></i> `;
+                html += `<span>TA:</span> ${q.ta} <i class="fas fa-leaf" style="margin:0 25px; color:#2ecc71"></i> `;
+            });
+            html += '</div>';
+            scroller.innerHTML = html + html;
+        }
+
+        // Notifications
+        async function fetchNotifications(lat, lon, city) {
+            try {
+                let q = city ? `?city=${city}` : `?lat=${lat}&lon=${lon}`;
+                const r = await fetch('/api/notifications/count' + q);
+                const d = await r.json();
+                const b = document.getElementById('notifBadge');
+                if (d.count > 0) { b.textContent = d.count; b.style.display = 'flex'; }
+                else { b.style.display = 'none'; }
+            } catch(e){}
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').textContent = now.toLocaleTimeString();
+            document.getElementById('liveDay').textContent = now.toLocaleDateString('en-US', { weekday: 'long' });
+            document.getElementById('liveDate').textContent = now.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            startDashboardLoad();
+            initMotivationScroller();
+            // Gemini Live Voice Logic
+            const voiceOverlay = document.getElementById('voiceOverlay');
+            const giantMicBtn = document.getElementById('giantMicBtn');
+            const voiceTranscript = document.getElementById('voiceTranscript');
+            const voiceAIReply = document.getElementById('voiceAIReply');
+            const voiceLangSelect = document.getElementById('voiceLangSelect');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition = null;
+            let isVoiceModeListening = false;
+            let isProcessing = false;
+
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = true;
+
+                recognition.onstart = () => {
+                    isVoiceModeListening = true;
+                    giantMicBtn.classList.add('listening-ring');
+                    voiceTranscript.textContent = "Listening...";
+                    voiceTranscript.style.color = "#fff";
+                    // Immediate Stop if AI is speaking
+                    if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+                };
+
+                recognition.onresult = (event) => {
+                    let interim = ''; let final = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) final += event.results[i][0].transcript;
+                        else interim += event.results[i][0].transcript;
+                    }
+                    voiceTranscript.textContent = final || interim;
+                    
+                    if (final && final.trim().length > 2 && !isProcessing) {
+                        isProcessing = true;
+                        handleVoiceSend(final);
+                    }
+                };
+
+                recognition.onend = () => {
+                    isVoiceModeListening = false;
+                    giantMicBtn.classList.remove('listening-ring');
+                    // Automatically restart if not processing and overlay is open
+                    if (voiceOverlay.style.display === 'flex' && !window.speechSynthesis.speaking && !isProcessing) {
+                        setTimeout(() => { 
+                            if(!isVoiceModeListening && voiceOverlay.style.display === 'flex') {
+                                try { 
+                                    recognition.lang = voiceLangSelect.value;
+                                    recognition.start(); 
+                                } catch(e){} 
+                            }
+                        }, 800);
+                    }
+                };
+
+                giantMicBtn.onclick = () => {
+                    if (window.speechSynthesis.speaking) {
+                        window.speechSynthesis.cancel();
+                        voiceTranscript.textContent = "Stopped. Tap to speak.";
+                        return;
+                    }
+                    if (isVoiceModeListening) {
+                        recognition.stop();
+                    } else {
+                        isProcessing = false;
+                        try { 
+                            recognition.lang = voiceLangSelect.value;
+                            recognition.start(); 
+                        } catch(e){}
+                    }
+                };
+
+                voiceLangSelect.onchange = () => {
+                    if (isVoiceModeListening) {
+                        recognition.stop();
+                        setTimeout(() => {
+                           try { recognition.lang = voiceLangSelect.value; recognition.start(); } catch(e){}
+                        }, 500);
+                    }
+                };
+            }
+
+            async function handleVoiceSend(text) {
+                voiceAIReply.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Thinking...';
+                try {
+                    const res = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            message: text,
+                            lang_code: voiceLangSelect.value
+                        })
+                    });
+                    const data = await res.json();
+                    voiceAIReply.textContent = data.reply;
+                    speakLive(data.reply, data.lang_code);
+                } catch (err) {
+                    voiceAIReply.textContent = "Connection lost.";
+                    isProcessing = false;
+                }
+            }
+
+            function speakLive(text, lang) {
+                window.speechSynthesis.cancel();
+                if (!text) return;
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                const targetLang = lang || voiceLangSelect.value;
+                utterance.lang = targetLang;
+                
+                // Robust voice selection for better pronunciation
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    let matchedVoice = voices.find(v => v.lang.replace('_', '-') === targetLang);
+                    if (!matchedVoice) matchedVoice = voices.find(v => v.lang.startsWith(targetLang.split('-')[0]));
+                    if (matchedVoice) utterance.voice = matchedVoice;
+                }
+
+                utterance.onstart = () => {
+                    voiceTranscript.textContent = "AI is responding...";
+                    voiceTranscript.style.color = "var(--primary-green)";
+                };
+
+                utterance.onend = () => {
+                    isProcessing = false;
+                    if (voiceOverlay.style.display === 'flex') {
+                        setTimeout(() => {
+                            try { 
+                                recognition.lang = voiceLangSelect.value;
+                                recognition.start(); 
+                            } catch(e){}
+                        }, 500);
+                    }
+                };
+                window.speechSynthesis.speak(utterance);
+            }
+
+            window.openVoiceMode = function() {
+                voiceOverlay.style.display = 'flex';
+                setTimeout(() => voiceOverlay.style.opacity = "1", 10);
+                isProcessing = false;
+                if (recognition) {
+                    try { 
+                        recognition.lang = voiceLangSelect.value;
+                        recognition.start(); 
+                    } catch(e){}
+                }
+            }
+
+            window.closeVoiceMode = function() {
+                voiceOverlay.style.opacity = "0";
+                setTimeout(() => voiceOverlay.style.display = 'none', 300);
+                if (recognition) recognition.stop();
+                window.speechSynthesis.cancel();
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+
+        document.getElementById('voiceAssistantBtn').addEventListener('click', () => {
+            window.location.href = '/chatbot?autoVoice=true';
+        });
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js');
+        }
+    </script>
+</body>
+
+</html>

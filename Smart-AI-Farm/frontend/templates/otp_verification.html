@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP - Smart AI Farm Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="auth-container">
+        <div class="glass-panel auth-card animate-fade-in">
+            <div class="auth-logo">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <h1 class="auth-title">Verify OTP</h1>
+            <p class="auth-subtitle">We've sent a code to <span id="displayPhone"
+                    style="color: white; font-weight: 500;"></span></p>
+
+            <form id="otpForm">
+                <div class="otp-inputs">
+                    <input type="text" class="form-control-farm otp-box" maxlength="1" required>
+                    <input type="text" class="form-control-farm otp-box" maxlength="1" required>
+                    <input type="text" class="form-control-farm otp-box" maxlength="1" required>
+                    <input type="text" class="form-control-farm otp-box" maxlength="1" required>
+                    <input type="text" class="form-control-farm otp-box" maxlength="1" required>
+                    <input type="text" class="form-control-farm otp-box" maxlength="1" required>
+                </div>
+
+                <!-- For demonstration passing -->
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">
+                    Demo Code: <strong id="demoCode" style="color:var(--primary-green)">---</strong>
+                </p>
+
+                <button type="submit" class="btn-farm" style="width: 100%;">
+                    Verify & Proceed <i class="fas fa-check" style="margin-left: 8px;"></i>
+                </button>
+            </form>
+
+            <p id="errorMessage" style="color: var(--accent-red); margin-top: 16px; display: none; font-size: 14px;">
+            </p>
+
+            <p class="timer-text">Resend OTP in <span id="timer">02:00</span></p>
+            <p style="margin-top: 8px; font-size: 14px;">
+                <a class="resend-link disabled" id="resendBtn">Resend Code</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const phone = sessionStorage.getItem('pending_phone');
+        if (!phone) window.location.href = '/login';
+
+        document.getElementById('displayPhone').textContent = phone;
+        document.getElementById('demoCode').textContent = sessionStorage.getItem('dummy_otp') || "123456";
+
+        // OTP Input Auto-advance logic
+        const inputs = document.querySelectorAll('.otp-box');
+        inputs.forEach((input, index) => {
+            input.addEventListener('keyup', (e) => {
+                if (e.key >= '0' && e.key <= '9') {
+                    if (index < inputs.length - 1) inputs[index + 1].focus();
+                } else if (e.key === 'Backspace') {
+                    if (index > 0) inputs[index - 1].focus();
+                }
+            });
+        });
+
+        // Timer Logic
+        let timeLeft = 120; // 2 minutes
+        const timerEl = document.getElementById('timer');
+        const resendBtn = document.getElementById('resendBtn');
+
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            timerEl.textContent = `${m}:${s}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timerEl.parentElement.style.display = 'none';
+                resendBtn.classList.remove('disabled');
+            }
+        }, 1000);
+
+        // Submit Form
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const otpCode = Array.from(inputs).map(inp => inp.value).join('');
+            const errorMsg = document.getElementById('errorMessage');
+
+            try {
+                const response = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, otp: otpCode })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    sessionStorage.removeItem('dummy_otp');
+                    window.location.href = '/dashboard';
+                } else {
+                    errorMsg.textContent = data.error || "Invalid OTP";
+                    errorMsg.style.display = 'block';
+                    inputs.forEach(inp => inp.value = '');
+                    inputs[0].focus();
+                }
+            } catch (err) {
+                errorMsg.textContent = "Network error. Please try again.";
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reminders - Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 30px 20px 80px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .reminder-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .reminder-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--primary-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .reminder-icon.irrigation {
+            background: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+        }
+
+        .reminder-icon.harvest {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--accent-orange);
+        }
+
+        .add-btn {
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: var(--primary-green);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+            cursor: pointer;
+            border: none;
+            z-index: 100;
+            transition: transform 0.2s;
+        }
+
+        .add-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .nav-item.active {
+            color: var(--primary-green);
+        }
+
+        .nav-icon {
+            font-size: 22px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-container animate-fade-in">
+        <h1 style="margin-bottom: 24px; font-size: 28px;">Farm Reminders</h1>
+
+        <!-- Reminders List -->
+
+        <div id="reminderList">
+            <!-- Mock Initial Reminder -->
+            <div class="reminder-card">
+                <div class="reminder-icon"><i class="fas fa-spray-can"></i></div>
+                <div style="flex: 1;">
+                    <h3 style="margin-bottom: 4px; font-size: 18px;">Pesticide Spray</h3>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px;">Tomato Field - Early
+                        Blight Treatment</p>
+                    <div
+                        style="display: flex; gap: 15px; font-size: 13px; color: var(--primary-green); font-weight: 500;">
+                        <span><i class="far fa-calendar-alt"></i> Tomorrow</span>
+                        <span><i class="far fa-clock"></i> 06:30 AM</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reminder-card">
+                <div class="reminder-icon irrigation"><i class="fas fa-water"></i></div>
+                <div style="flex: 1;">
+                    <h3 style="margin-bottom: 4px; font-size: 18px;">Irrigation</h3>
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px;">Paddy Field Zone B</p>
+                    <div style="display: flex; gap: 15px; font-size: 13px; color: #3498db; font-weight: 500;">
+                        <span><i class="far fa-calendar-alt"></i> Today</span>
+                        <span><i class="far fa-clock"></i> 05:00 PM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: Quick Emergency Help Panel on Reminder Page -->
+        <div style="margin-top: 40px; padding: 20px; border-radius: 20px; background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                <h3 style="color: var(--accent-red); margin: 0; font-size: 18px;"><i class="fas fa-life-ring"></i> Quick Emergency Help</h3>
+                <a href="/emergency" style="font-size: 12px; color: var(--text-muted); text-decoration: none;">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <a href="tel:18001801551" style="text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <i class="fas fa-tractor" style="color: var(--primary-green); font-size: 18px;"></i>
+                    <span style="font-size: 10px; color: white; text-align: center;">Kisan</span>
+                </a>
+                <a href="tel:14416" style="text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <i class="fas fa-heartbeat" style="color: #3498db; font-size: 18px;"></i>
+                    <span style="font-size: 10px; color: white; text-align: center;">Mental Health</span>
+                </a>
+                <a href="tel:100" style="text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <i class="fas fa-shield-alt" style="color: var(--accent-red); font-size: 18px;"></i>
+                    <span style="font-size: 10px; color: white; text-align: center;">Police</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Reminder Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; font-size: 20px;">New Reminder</h2>
+            <form id="reminderForm">
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">Action Type</label>
+                    <select class="form-control-farm" id="typeInput" style="padding-left: 20px;" required>
+                        <option value="Pesticide">Pesticide Spraying</option>
+                        <option value="Irrigation">Irrigation</option>
+                        <option value="Fertilizer">Fertilizer Application</option>
+                        <option value="Harvest">Harvest Time</option>
+                    </select>
+                </div>
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">Crop / Field
+                        Name</label>
+                    <input type="text" class="form-control-farm" id="cropInput" style="padding-left: 20px;" required>
+                </div>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">Date</label>
+                        <input type="date" class="form-control-farm" id="dateInput" style="padding-left: 15px;"
+                            required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">Time</label>
+                        <input type="time" class="form-control-farm" id="timeInput" style="padding-left: 15px;"
+                            required>
+                    </div>
+                </div>
+
+                <!-- NEW: Alarm & Ringtone -->
+                <div
+                    style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <label style="color: white; font-weight: 600;"><i class="fas fa-bell"></i> Set Alarm</label>
+                        <div style="position: relative; display: inline-block; width: 40px; height: 20px;">
+                            <input type="checkbox" id="alarmToggle" checked
+                                style="width: 100%; height: 100%; cursor: pointer;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">Selection
+                            Ringtone</label>
+                        <select class="form-control-farm" id="ringtoneInput" style="padding-left: 15px;">
+                            <option value="classic">Classic Alarm</option>
+                            <option value="nature">Bird Chirping (Nature)</option>
+                            <option value="alert">Digital Alert</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-outline-farm" style="flex: 1;"
+                        onclick="document.getElementById('addModal').style.display='none'">Cancel</button>
+                    <button type="submit" class="btn-farm" style="flex: 1;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <button class="add-btn" onclick="document.getElementById('addModal').style.display='flex'">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <i class="fas fa-home nav-icon"></i><span>Home</span>
+        </a>
+        <a href="/weather" class="nav-item">
+            <i class="fas fa-cloud nav-icon"></i><span>Weather</span>
+        </a>
+        <a href="/chatbot" class="nav-item">
+            <i class="fas fa-robot nav-icon"></i><span>AI Bot</span>
+        </a>
+        <a href="/reminder" class="nav-item active">
+            <i class="fas fa-bell nav-icon"></i><span>Reminders</span>
+        </a>
+        <a href="/emergency" class="nav-item">
+            <i class="fas fa-phone-alt nav-icon"></i><span>Emergency</span>
+        </a>
+    </nav>
+
+    <!-- Alarm Trigger Modal -->
+    <div class="modal" id="alarmTriggerModal">
+        <div class="modal-content" style="text-align: center; border-color: var(--primary-green);">
+            <div
+                style="font-size: 50px; color: var(--primary-green); margin-bottom: 20px; animation: pulse 1s infinite;">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h2 id="alarmTitle" style="margin-bottom: 10px;">Time for Irrigation!</h2>
+            <p id="alarmCrop" style="color: var(--text-muted); margin-bottom: 25px;">Paddy Field Zone B</p>
+            <button class="btn-farm" style="width: 100%; padding: 15px;" onclick="stopAlarm()">Stop Alarm</button>
+        </div>
+    </div>
+
+    <audio id="alarmAudio" loop>
+        <source id="audioSource" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"
+            type="audio/mpeg">
+    </audio>
+
+    <script>
+        let reminders = [];
+        let alarmInterval = null;
+        const alarmAudio = document.getElementById('alarmAudio');
+        const audioSource = document.getElementById('audioSource');
+
+        const ringtoneUrls = {
+            classic: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3",
+            nature: "https://assets.mixkit.co/active_storage/sfx/2501/2501-preview.mp3",
+            alert: "https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"
+        };
+
+        // Load existing reminders
+        async function loadReminders() {
+            try {
+                const res = await fetch('/api/reminders'); // Assuming this exists or returns user's reminders
+                const data = await res.json();
+                reminders = data.reminders || [];
+                startAlarmCheck();
+            } catch (e) {
+                console.log("Reminders API not fully implemented, using mock for demo");
+                // Mock for demo if API fails
+                reminders = [
+                    { type: 'Irrigation', crop: 'Paddy Field Zone B', date: new Date().toISOString().split('T')[0], time: '23:30', alarm: true, ringtone: 'classic' }
+                ];
+                startAlarmCheck();
+            }
+        }
+
+        function startAlarmCheck() {
+            if (alarmInterval) clearInterval(alarmInterval);
+            alarmInterval = setInterval(() => {
+                const now = new Date();
+                const nowDate = now.toISOString().split('T')[0];
+                const nowTime = now.toTimeString().slice(0, 5);
+
+                reminders.forEach(r => {
+                    if (r.alarm && r.date === nowDate && r.time === nowTime && !r.triggered) {
+                        triggerAlarm(r);
+                        r.triggered = true; // Prevent multiple triggers in same minute
+                    }
+                });
+            }, 10000); // Check every 10 seconds
+        }
+
+        function triggerAlarm(r) {
+            document.getElementById('alarmTitle').textContent = `Time for ${r.type}!`;
+            document.getElementById('alarmCrop').textContent = r.crop;
+
+            const url = ringtoneUrls[r.ringtone || 'classic'];
+            audioSource.src = url;
+            alarmAudio.load();
+            alarmAudio.play().catch(e => console.log("Audio play blocked by browser"));
+
+            document.getElementById('alarmTriggerModal').style.display = 'flex';
+        }
+
+        function stopAlarm() {
+            alarmAudio.pause();
+            alarmAudio.currentTime = 0;
+            document.getElementById('alarmTriggerModal').style.display = 'none';
+        }
+
+        document.getElementById('reminderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                type: document.getElementById('typeInput').value,
+                crop: document.getElementById('cropInput').value,
+                date: document.getElementById('dateInput').value,
+                time: document.getElementById('timeInput').value,
+                alarm: document.getElementById('alarmToggle').checked,
+                ringtone: document.getElementById('ringtoneInput').value,
+                message: "Reminder set with alarm"
+            };
+
+            try {
+                const res = await fetch('/api/reminder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    alert('Reminder & Alarm scheduled successfully!');
+                    document.getElementById('addModal').style.display = 'none';
+                    window.location.reload();
+                }
+            } catch (err) {
+                alert("Error saving reminder.");
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadReminders);
+    </script>
+
+    <style>
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</body>
+
+</html>

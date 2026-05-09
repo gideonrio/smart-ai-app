@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AI Farm Chatbot - Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background: #0f172a;
+            position: fixed; /* Prevents bounce scroll on iOS */
+            width: 100%;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            background: var(--bg-dark);
+            position: relative;
+        }
+
+        .chat-header {
+            padding: calc(10px + env(safe-area-inset-top)) 20px 10px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 20px;
+            line-height: 1.5;
+            font-size: 15px;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .bot {
+            background: rgba(30, 41, 59, 0.9);
+            border-bottom-left-radius: 4px;
+            align-self: flex-start;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .user {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-bottom-right-radius: 4px;
+            align-self: flex-end;
+        }
+
+        .chat-input-area {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 15px 20px calc(15px + env(safe-area-inset-bottom));
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 30px;
+            outline: none;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-green);
+        }
+
+        .action-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn {
+            background: var(--primary-green);
+        }
+
+        .voice-mode-btn {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .attach-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .lang-select {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .lang-select option {
+            background: #1e293b;
+            color: white;
+        }
+
+        .lang-select:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .header-back-btn {
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .header-back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-3px);
+        }
+
+        .read-aloud-btn {
+            margin-top: 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            padding: 6px 12px;
+            color: #10b981;
+            cursor: pointer;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .read-aloud-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        /* Full Screen Voice Assistant Overlay */
+        .voice-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #020617, #0f172a, #1e1b4b);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .voice-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .close-voice-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .close-voice-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .giant-mic {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            cursor: pointer;
+            box-shadow: 0 0 50px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .giant-mic.listening {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 0 80px rgba(239, 68, 68, 0.6);
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        .giant-mic::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .voice-text {
+            font-size: 28px;
+            font-weight: 300;
+            text-align: center;
+            max-width: 80%;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.9);
+            min-height: 80px;
+        }
+
+        .voice-ai-reply {
+            font-size: 20px;
+            font-weight: 400;
+            text-align: center;
+            max-width: 80%;
+            color: #10b981;
+            margin-top: 30px;
+            font-style: italic;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 40px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* Responsiveness for different devices */
+        @media (max-width: 768px) {
+            .chat-messages { padding: 15px; }
+            .message { max-width: 90%; font-size: 14px; }
+            .giant-mic { width: 120px; height: 120px; font-size: 45px; }
+            .voice-text { font-size: 22px; }
+            .chat-header { padding: 10px 15px; gap: 8px; }
+            .lang-select { padding: 5px 10px; font-size: 11px; }
+            .header-back-btn { padding: 6px 10px; font-size: 12px; }
+        }
+
+        @media (max-width: 480px) {
+            .chat-header h2 { font-size: 15px !important; }
+            .chat-header div[style*="font-size: 12px"] { font-size: 10px !important; }
+            .chat-input-area { padding: 10px; }
+            .chat-input { padding: 12px 15px; font-size: 14px; }
+            .action-btn { width: 42px; height: 42px; font-size: 16px; }
+            .giant-mic { width: 100px; height: 100px; font-size: 35px; }
+            .voice-text { font-size: 18px; }
+            .close-voice-btn { top: 15px; left: 15px; width: 40px; height: 40px; }
+            .lang-select { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Normal Chat Mode -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <a href="/dashboard" class="header-back-btn">
+                <i class="fas fa-home"></i> Back
+            </a>
+            <div
+                style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-size: 22px; color: white;">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div style="flex: 1;">
+                <h2 style="font-size: 18px; margin: 0; color: white; display: flex; align-items: center; gap: 8px;">
+                    Expert Farmer AI <i class="fas fa-check-circle" style="color:#10b981; font-size:14px;"></i></h2>
+                <div style="font-size: 12px; color: #10b981;">Online & Ready</div>
+            </div>
+            <select class="lang-select" id="langSelect">
+                <option value="en-US">English</option>
+                <option value="ta-IN">தமிழ் (Tamil)</option>
+                <option value="hi-IN">हिंदी (Hindi)</option>
+                <option value="te-IN">తెలుగు (Telugu)</option>
+            </select>
+            <!-- Launch Voice Mode Button from header -->
+            <button class="action-btn voice-mode-btn" style="width:40px;height:40px;font-size:16px;"
+                onclick="openVoiceMode()"><i class="fas fa-microphone-alt"></i></button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                Hello! I am your AI Farm Assistant. I can help you with crop diseases, market prices, farming
+                techniques, and more.<br><br>You can type your questions below, or tap the purple microphone icon to
+                enter <strong>Voice Assistant Mode</strong>! 🌾
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div id="imagePreviewContainer"
+                style="display:none; width:100%; max-width:900px; margin-bottom:10px; gap:10px; overflow-x:auto;"></div>
+            <div class="input-wrapper">
+                <input type="file" id="imageInput" accept="image/*" style="display:none;" multiple>
+                <button class="action-btn attach-btn" id="attachBtn"><i class="fas fa-paperclip"></i></button>
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ask me anything about farming...">
+                <button class="action-btn send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Screen Voice Assistant Overlay -->
+    <div class="voice-overlay" id="voiceOverlay">
+        <button class="close-voice-btn" onclick="closeVoiceMode()"><i class="fas fa-times"></i></button>
+
+        <div
+            style="color: rgba(255,255,255,0.5); font-size: 18px; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 2px;">
+            <i class="fas fa-robot"></i> Smart AI Voice
+        </div>
+
+        <div class="giant-mic" id="giantMicBtn">
+            <i class="fas fa-microphone"></i>
+        </div>
+
+        <div class="voice-text" id="voiceTranscript">Tap the mic and speak...</div>
+        <div class="voice-ai-reply" id="voiceAIReply"></div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const langSelect = document.getElementById('langSelect');
+        const imageInput = document.getElementById('imageInput');
+        const attachBtn = document.getElementById('attachBtn');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+
+        attachBtn.onclick = () => imageInput.click();
+
+        imageInput.onchange = () => {
+            imagePreviewContainer.innerHTML = '';
+            if (imageInput.files.length > 0) {
+                imagePreviewContainer.style.display = 'flex';
+                Array.from(imageInput.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.style.height = '60px';
+                        img.style.borderRadius = '8px';
+                        img.style.border = '2px solid #10b981';
+                        imagePreviewContainer.appendChild(img);
+                    }
+                    reader.readAsDataURL(file);
+                });
+                attachBtn.style.color = '#10b981';
+            } else {
+                imagePreviewContainer.style.display = 'none';
+                attachBtn.style.color = 'var(--text-muted)';
+            }
+        };
+
+        langSelect.onchange = () => {
+            if (voiceOverlay.classList.contains('active')) {
+                console.log("Language changed to:", langSelect.value);
+                if (recognition) {
+                    recognition.stop();
+                    // onend will handle the restart with the new language
+                }
+            }
+        };
+
+        // Speech Elements
+        const voiceOverlay = document.getElementById('voiceOverlay');
+        const giantMicBtn = document.getElementById('giantMicBtn');
+        const voiceTranscript = document.getElementById('voiceTranscript');
+        const voiceAIReply = document.getElementById('voiceAIReply');
+
+        // Speech Recognition Setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let isVoiceModeListening = false;
+        let currentUtterance = null;
+        let inactivityTimer = null;
+
+        function startInactivityTimer() {
+            stopInactivityTimer();
+            if (voiceOverlay.classList.contains('active')) {
+                inactivityTimer = setTimeout(() => {
+                    console.log("Inactivity timeout reached. Closing voice mode.");
+                    closeVoiceMode();
+                }, 10000); // 10 seconds
+            }
+        }
+
+        function stopInactivityTimer() {
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = null;
+            }
+        }
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Better for turn-taking
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                isVoiceModeListening = true;
+                giantMicBtn.classList.add('listening');
+                voiceTranscript.style.color = 'white';
+                
+                // CRITICAL: Stop talking the instant the mic opens
+                if (window.speechSynthesis.speaking) {
+                    stopAssistantSpeech();
+                }
+                stopInactivityTimer();
+            };
+
+            recognition.onresult = (event) => {
+                // Also stop speech on interim results for faster responsiveness
+                if (window.speechSynthesis.speaking) {
+                    stopAssistantSpeech();
+                }
+
+                let interim = ''; let final = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) final += event.results[i][0].transcript;
+                    else interim += event.results[i][0].transcript;
+                }
+                
+                if (interim || final) {
+                    voiceTranscript.textContent = final || interim;
+                    stopInactivityTimer();
+                }
+
+                // SUBSTANTIAL CHECK: Only send if text is long enough to be a word
+                // This prevents background 'hiss' or 'ums' from triggering AI replies
+                if (final && final.trim().length > 3) {
+                    chatInput.value = final;
+                    handleSend(true);
+                }
+            };
+
+            recognition.onerror = (e) => {
+                if (e.error !== 'no-speech') {
+                    giantMicBtn.classList.remove('listening');
+                    isVoiceModeListening = false;
+                    voiceTranscript.textContent = "Error: " + e.error + ". Tap to try again.";
+                }
+            };
+
+            recognition.onend = () => {
+                giantMicBtn.classList.remove('listening');
+                isVoiceModeListening = false;
+                
+                // If we are in voice mode and the overlay is still active
+                if (voiceOverlay.classList.contains('active')) {
+                    // If assistant is NOT speaking and we didn't just send a message, restart
+                    if (!window.speechSynthesis.speaking) {
+                        startInactivityTimer();
+                        
+                        // Restart listening after a short delay unless manually closed
+                        setTimeout(() => {
+                            if (voiceOverlay.classList.contains('active') && !isVoiceModeListening && !window.speechSynthesis.speaking) {
+                                try {
+                                    recognition.lang = langSelect.value;
+                                    recognition.start();
+                                } catch(e) {}
+                            }
+                        }, 500);
+                    }
+                }
+            };
+
+            giantMicBtn.addEventListener('click', () => {
+                if (isVoiceModeListening) {
+                    recognition.stop();
+                    stopAssistantSpeech();
+                } else {
+                    stopAssistantSpeech();
+                    stopInactivityTimer();
+                    // Detect language from selection or default to English
+                    recognition.lang = langSelect.value;
+                    try {
+                        recognition.start();
+                        console.log("Recognition started with lang:", recognition.lang);
+                    } catch(e) {
+                        console.warn("Recognition start failed (likely already running):", e);
+                    }
+                }
+            });
+        }
+
+        // Voice Helpers
+        function stopAssistantSpeech() {
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        async function compressImage(file, maxWidth, maxHeight) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height *= maxWidth / width;
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width *= maxHeight / height;
+                                height = maxHeight;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => {
+                            resolve(new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            }));
+                        }, 'image/jpeg', 0.6);
+                    };
+                };
+            });
+        }
+
+        function speakResponse(text, langCode) {
+            stopAssistantSpeech();
+            stopInactivityTimer(); // Don't timeout while talking
+            
+            if (!text) return;
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            const targetLang = langCode || langSelect.value;
+            utterance.lang = targetLang;
+            utterance.rate = 1.0; 
+            utterance.pitch = 1.0;
+
+            // Robust voice selection
+            const setVoice = () => {
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    // 1. Try exact match (e.g., ta-IN)
+                    let matchedVoice = voices.find(v => v.lang.replace('_', '-') === targetLang);
+                    // 2. Try language-only match (e.g., ta)
+                    if (!matchedVoice) matchedVoice = voices.find(v => v.lang.startsWith(targetLang.split('-')[0]));
+                    
+                    if (matchedVoice) {
+                        utterance.voice = matchedVoice;
+                        console.log("Found voice:", matchedVoice.name, matchedVoice.lang);
+                    }
+                }
+            };
+
+            setVoice();
+            // In some browsers, voices are loaded asynchronously
+            if (!utterance.voice && window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = setVoice;
+            }
+
+            console.log("Final check - Speaking in:", utterance.lang, "Voice:", utterance.voice ? utterance.voice.name : 'default');
+
+            // UI Feedback
+            utterance.onstart = () => {
+                voiceAIReply.style.opacity = "1";
+                voiceAIReply.textContent = text;
+                stopInactivityTimer();
+            };
+
+            utterance.onend = () => {
+                // Once finished talking, restart recognition and inactivity timer
+                if (voiceOverlay.classList.contains('active')) {
+                    startInactivityTimer();
+                    if (!isVoiceModeListening) {
+                        try {
+                            // Ensure recognition resumes in the correct language
+                            recognition.lang = langSelect.value;
+                            recognition.start();
+                        } catch(e) {}
+                    }
+                }
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+        
+        // Add a global handler to stop speech if user clicks or touches anywhere
+        window.addEventListener('mousedown', () => {
+             if (voiceOverlay.classList.contains('active')) stopAssistantSpeech();
+        });
+        window.addEventListener('keydown', () => {
+             if (voiceOverlay.classList.contains('active')) stopAssistantSpeech();
+        });
+
+        // Voice Overlay Controls
+        window.openVoiceMode = () => {
+            voiceOverlay.classList.add('active');
+            voiceTranscript.textContent = "Tap the mic or just wait/speak...";
+            voiceAIReply.textContent = "";
+            startInactivityTimer();
+            if (recognition) {
+                setTimeout(() => {
+                    try {
+                        recognition.lang = langSelect.value;
+                        recognition.start();
+                    } catch(e) {}
+                }, 400);
+            }
+        };
+
+        window.closeVoiceMode = () => {
+            voiceOverlay.classList.remove('active');
+            stopInactivityTimer();
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+            }
+            stopAssistantSpeech();
+        };
+
+        // Text Chat Logic
+        function appendMessage(text, isBot, hasImage = false, langCode = null) {
+            const div = document.createElement('div');
+            div.className = `message ${isBot ? 'bot' : 'user'}`;
+
+            if (hasImage) {
+                const imgIcon = document.createElement('div');
+                imgIcon.innerHTML = '<i class="fas fa-image" style="margin-right:8px;"></i> [Image(s) Attached]<br>';
+                imgIcon.style.color = '#10b981';
+                imgIcon.style.marginBottom = '5px';
+                div.appendChild(imgIcon);
+            }
+
+            const textContainer = document.createElement('div');
+            // Clean AI formatting for better TTS
+            const cleanText = text ? text.replace(/\*\*/g, '').replace(/###/g, '') : '';
+            textContainer.innerHTML = text ? text.replace(/\n/g, '<br>') : (hasImage ? '' : '...');
+            div.appendChild(textContainer);
+
+            if (isBot && text) {
+                const btn = document.createElement('button');
+                btn.className = 'read-aloud-btn';
+                btn.innerHTML = '<i class="fas fa-volume-up"></i> Read Aloud';
+
+                btn.onclick = () => {
+                    if (window.speechSynthesis.speaking) {
+                        window.speechSynthesis.cancel();
+                        btn.innerHTML = '<i class="fas fa-volume-up"></i> Read Aloud';
+                    } else {
+                        speakResponse(cleanText, langCode);
+                        btn.innerHTML = '<i class="fas fa-volume-mute"></i> Stop';
+                    }
+                };
+                div.appendChild(btn);
+            }
+
+            chatMessages.appendChild(div);
+            requestAnimationFrame(() => chatMessages.scrollTop = chatMessages.scrollHeight);
+            return cleanText;
+        }
+
+        async function handleSend(isFromVoice = false) {
+            const text = chatInput.value.trim();
+            const files = imageInput.files;
+
+            if (!text && files.length === 0) return;
+
+            // INTERRUPTION: If user types/sends, stop current speech
+            stopAssistantSpeech();
+
+            if (!isFromVoice) {
+                appendMessage(text, false, files.length > 0);
+            }
+            chatInput.value = '';
+
+            let fetchOptions = { method: 'POST' };
+
+            if (files.length > 0) {
+                if (isFromVoice) voiceAIReply.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing Images...';
+                const formData = new FormData();
+                formData.append('message', text);
+                formData.append('lang_code', langSelect.value);
+                formData.append('is_voice', isFromVoice);
+                
+                for (let i = 0; i < files.length; i++) {
+                    const compressed = await compressImage(files[i], 640, 640);
+                    formData.append('images', compressed);
+                }
+                const lat = localStorage.getItem('userLat');
+                const lon = localStorage.getItem('userLon');
+                if (lat && lon) {
+                    formData.append('lat', lat);
+                    formData.append('lon', lon);
+                }
+
+                fetchOptions.body = formData;
+                imageInput.value = '';
+                imagePreviewContainer.innerHTML = '';
+                imagePreviewContainer.style.display = 'none';
+                attachBtn.style.color = 'var(--text-muted)';
+            } else {
+                fetchOptions.headers = { 'Content-Type': 'application/json' };
+                const lat = localStorage.getItem('userLat');
+                const lon = localStorage.getItem('userLon');
+                fetchOptions.body = JSON.stringify({ 
+                    message: text,
+                    lang_code: langSelect.value,
+                    is_voice: isFromVoice,
+                    lat: lat,
+                    lon: lon
+                });
+            }
+
+            const typingId = 'typing-' + Date.now();
+            if (!isFromVoice) {
+                const typingDiv = document.createElement('div');
+                typingDiv.id = typingId;
+                typingDiv.className = 'message bot';
+                typingDiv.innerHTML = '<i class="fas fa-ellipsis-h fa-fade"></i>';
+                chatMessages.appendChild(typingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else {
+                voiceAIReply.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            }
+
+            try {
+                const res = await fetch('/api/chat', fetchOptions);
+                const data = await res.json();
+
+                if (!isFromVoice) {
+                    document.getElementById(typingId)?.remove();
+                    appendMessage(data.reply, true, false, data.lang_code);
+                } else {
+                    voiceAIReply.innerHTML = data.reply;
+                    const clean = appendMessage(data.reply, true, false, data.lang_code);
+
+                    // Respond in voice using the DETECTED language from server
+                    window.responseTimer = setTimeout(() => {
+                        speakResponse(clean, data.lang_code);
+                        window.responseTimer = null;
+                    }, 500);
+                }
+            } catch (err) {
+                if (!isFromVoice) document.getElementById(typingId)?.remove();
+                const errText = "Sorry, I'm having connection issues.";
+                appendMessage(errText, true);
+                if (isFromVoice) voiceAIReply.textContent = errText;
+            }
+        }
+
+        sendBtn.addEventListener('click', () => handleSend(false));
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(false); });
+
+        if (new URLSearchParams(window.location.search).get('autoVoice') === 'true') {
+            openVoiceMode();
+            window.history.replaceState({}, document.title, "/chatbot");
+        }
+    </script>
+</body>
+
+</html>

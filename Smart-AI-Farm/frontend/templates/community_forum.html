@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community | Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 20px 20px 80px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .post-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: transform 0.3s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(26, 188, 156, 0.5);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .post-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #2c3e50;
+        }
+
+        .post-author {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .post-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .post-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: white;
+        }
+
+        .post-content {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .post-tags {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: rgba(26, 188, 156, 0.15);
+            color: #1abc9c;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .post-footer {
+            display: flex;
+            gap: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 12px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .action {
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action:hover {
+            color: #1abc9c;
+        }
+
+        .fab-btn {
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: #1abc9c;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 20px rgba(26, 188, 156, 0.4);
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.3s;
+            z-index: 100;
+        }
+
+        .fab-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .nav-item.active,
+        .nav-item:hover {
+            color: var(--primary-green);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container animate-fade-in">
+        <a href="/dashboard"
+            style="color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;font-weight:500;">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <div class="hero">
+            <div style="font-size:3rem;margin-bottom:12px;">🤝</div>
+            <h1>Agri Community</h1>
+            <p style="color:rgba(255,255,255,0.8);">Connect with 10k+ farmers and experts</p>
+        </div>
+
+        <!-- NEW: Pest Heatmap Alert -->
+        <div class="glass-panel"
+            style="margin-bottom: 25px; padding: 20px; border-left: 4px solid var(--accent-red); background: rgba(231, 76, 60, 0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                <div>
+                    <h3 style="color: var(--accent-red); font-size: 18px; margin-bottom: 5px;"><i
+                            class="fas fa-biohazard"></i> Pest Outbreak Alert</h3>
+                    <p style="font-size: 14px; opacity: 0.8;">3 cases of 'Fall Armyworm' reported within 5km of your
+                        location.</p>
+                </div>
+                <div
+                    style="background: var(--accent-red); color: white; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700;">
+                    HIGH RISK</div>
+            </div>
+            <div id="pestHeatmap"
+                style="width: 100%; height: 200px; border-radius: 12px; overflow: hidden; margin-bottom: 15px; border: 1px solid var(--border-color);">
+                <iframe id="heatmapFrame" width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+            <button class="btn-farm" style="width: 100%; background: var(--accent-red);"><i
+                    class="fas fa-shield-alt"></i> Join Village Safety Net</button>
+        </div>
+
+        <div id="postsList">
+            <div style="text-align:center;padding:40px;color:var(--text-muted)"><i
+                    class="fas fa-spinner fa-spin fa-2x"></i></div>
+        </div>
+    </div>
+
+    <div class="fab-btn">
+        <i class="fas fa-pen"></i>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
+        <a href="/store" class="nav-item"><i class="fas fa-store nav-icon"></i><span>Store</span></a>
+        <a href="/community" class="nav-item active"><i class="fas fa-users nav-icon"></i><span>Community</span></a>
+        <a href="/rental" class="nav-item"><i class="fas fa-tractor nav-icon"></i><span>Rental</span></a>
+        <a href="/schemes" class="nav-item"><i class="fas fa-hand-holding-dollar nav-icon"></i><span>Schemes</span></a>
+    </nav>
+
+    <script>
+        // Heatmap Logic
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                document.getElementById('heatmapFrame').src = `https://maps.google.com/maps?q=${lat},${lon}&z=13&ie=UTF8&iwloc=&output=embed`;
+            });
+        }
+
+        fetch('/api/community/posts')
+            .then(r => r.json())
+            .then(posts => {
+                const list = document.getElementById('postsList');
+                list.innerHTML = '';
+                posts.forEach(p => {
+                    let tagsHtml = p.tags.map(t => `<span class="tag">#${t}</span>`).join('');
+                    list.innerHTML += `
+            <div class="post-card">
+                <div class="post-header">
+                    <img src="${p.avatar}" class="post-avatar" alt="Avatar">
+                    <div>
+                        <div class="post-author">${p.author} <i class="fas fa-check-circle" style="color:#1abc9c;font-size:12px;"></i></div>
+                        <div class="post-time">${p.time}</div>
+                    </div>
+                </div>
+                <div class="post-title">${p.title}</div>
+                <div class="post-content">${p.content}</div>
+                <div class="post-tags">${tagsHtml}</div>
+                <div class="post-footer">
+                    <div class="action"><i class="far fa-heart"></i> ${p.likes}</div>
+                    <div class="action"><i class="far fa-comment"></i> ${p.comments}</div>
+                    <a href="https://wa.me/919876543210?text=Hi%20${encodeURIComponent(p.author)},%20I%20saw%20your%20post:%20${encodeURIComponent(p.title)}" target="_blank" class="action" style="text-decoration:none; color:inherit; margin-left:auto;">
+                        <i class="fab fa-whatsapp" style="color:#25D366; font-size: 16px;"></i> Chat
+                    </a>
+                    <a href="https://wa.me/919876543210?text=Video%20Call%20Request" target="_blank" class="action" style="text-decoration:none; color:inherit;">
+                        <i class="fas fa-video" style="color:#1abc9c; font-size: 16px;"></i> Call
+                    </a>
+                </div>
+            </div>
+        `;
+                });
+            });
+    </script>
+</body>
+
+</html>

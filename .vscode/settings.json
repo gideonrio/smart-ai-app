@@ -1,0 +1,12 @@
+{
+    "python.analysis.extraPaths": [
+        "./Smart-AI-Farm"
+    ],
+    "python.autoComplete.extraPaths": [
+        "./Smart-AI-Farm"
+    ],
+    "pylint.args": [
+        "--init-hook=\"import sys; sys.path.append('./Smart-AI-Farm')\"",
+        "--disable=E0401,C0415"
+    ]
+}

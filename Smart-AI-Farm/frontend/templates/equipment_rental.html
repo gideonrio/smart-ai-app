@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment Rental | Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 20px 20px 80px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .rental-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 18px;
+        }
+
+        .rental-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 20px;
+            transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rental-card:hover {
+            transform: translateY(-5px);
+            border-color: #e67e22;
+            box-shadow: 0 10px 30px rgba(230, 126, 34, 0.15);
+        }
+
+        .eq-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 14px;
+        }
+
+        .eq-type {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .eq-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .eq-owner {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .eq-price {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #e67e22;
+            margin-bottom: 15px;
+        }
+
+        .book-btn {
+            background: linear-gradient(to right, #e67e22, #d35400);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .book-btn:hover {
+            box-shadow: 0 4px 15px rgba(230, 126, 34, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 5px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active,
+        .nav-item:hover {
+            color: #e67e22;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding-bottom: 5px;
+        }
+
+        .flt {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .flt.active {
+            background: #e67e22;
+            border-color: #e67e22;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container animate-fade-in">
+        <a href="/dashboard"
+            style="color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;font-weight:500;">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <div class="hero">
+            <div style="font-size:3rem;margin-bottom:12px;">🚜</div>
+            <h1>Equipment Rental</h1>
+            <p style="color:rgba(255,255,255,0.8);">Rent Tractors, Harvesters & Drones instantly</p>
+        </div>
+
+        <div id="realMapContainer"
+            style="display:none; margin-bottom: 20px; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <iframe id="googleMap" width="100%" height="250" style="border:0;" allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+
+        <div class="filter-row">
+            <div class="flt active">All Machinery</div>
+            <div class="flt">Tractors</div>
+            <div class="flt">Harvesters</div>
+            <div class="flt">Smart Drones</div>
+            <div class="flt">Implements</div>
+        </div>
+
+        <div id="rentalGrid" class="rental-grid">
+            <div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p style="margin-top:15px;" id="loadingText">Finding real rental shops near your location...</p>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
+        <a href="/store" class="nav-item"><i class="fas fa-store nav-icon"></i><span>Buy Store</span></a>
+        <a href="/community" class="nav-item"><i class="fas fa-users nav-icon"></i><span>Community</span></a>
+        <a href="/rental" class="nav-item active"><i class="fas fa-tractor nav-icon"></i><span>Rentals</span></a>
+        <a href="/chatbot" class="nav-item"><i class="fas fa-robot nav-icon"></i><span>AI Bot</span></a>
+    </nav>
+
+    <script>
+        function renderEquipments(items) {
+            const grid = document.getElementById('rentalGrid');
+            grid.innerHTML = '';
+            if (items.length === 0) {
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">No shops found perfectly nearby. Please check the map above!</div>';
+                return;
+            }
+
+            items.forEach(item => {
+                const phone = item.phone || '9876543210';
+                const callLink = `tel:${phone.replace(/[^0-9]/g, '')}`;
+                const waLink = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello,%20I'm%20interested%20in%20renting%20your%20${encodeURIComponent(item.name)}.`;
+
+                // Navigation link to Google Maps
+                const navLink = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lon}`;
+
+                const inAppChatLink = `/farmer-chat?user=${encodeURIComponent(item.owner)}`;
+
+                grid.innerHTML += `
+                <div class="rental-card">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div class="eq-icon" style="background:${item.color}20; color:${item.color};">
+                            <i class="fas ${item.image}"></i>
+                        </div>
+                        <div class="eq-type" style="background:${item.color}20; color:${item.color};">${item.type}</div>
+                    </div>
+                    <div class="eq-name">${item.name}</div>
+                    <div class="eq-owner">
+                        <i class="fas fa-map-marker-alt" style="color:#e74c3c"></i> ${item.owner} 
+                        <br><span style="color:#f1c40f"><i class="fas fa-star"></i> ${item.rating}</span>
+                    </div>
+                    <div class="eq-price">${item.price}</div>
+                    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; margin-top: -5px;">
+                        <i class="fas fa-phone" style="font-size: 10px;"></i> ${phone}
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top: 5px;">
+                        <a href="${waLink}" target="_blank" style="text-decoration:none; flex: 1;">
+                            <button class="book-btn" style="background: linear-gradient(135deg, #25D366, #128C7E);">
+                                <i class="fab fa-whatsapp"></i> WA Message
+                            </button>
+                        </a>
+                        <a href="${navLink}" target="_blank" style="text-decoration:none;">
+                            <button class="book-btn" style="background: linear-gradient(135deg, #e67e22, #d35400); width: 42px; padding: 12px 0;" title="Navigate to Shop">
+                                <i class="fas fa-directions"></i>
+                            </button>
+                        </a>
+                        <a href="${callLink}" style="text-decoration:none;">
+                            <button class="book-btn" style="background: linear-gradient(135deg, #3498db, #2980b9); width: 42px; padding: 12px 0;" title="Call Shop">
+                                <i class="fas fa-phone-alt"></i>
+                            </button>
+                        </a>
+                        <a href="${inAppChatLink}" style="text-decoration:none; flex-basis: 100%;">
+                            <button class="book-btn" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); width: 100%;">
+                                <i class="fas fa-comments"></i> In-App Chat
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            `;
+            });
+        }
+
+        function fetchEquipments(lat, lon) {
+            let url = '/api/rental/equipments';
+            if (lat && lon) {
+                url += `?lat=${lat}&lon=${lon}`;
+
+                // Show real map
+                const mapContainer = document.getElementById('realMapContainer');
+                const googleMap = document.getElementById('googleMap');
+                googleMap.src = `https://maps.google.com/maps?q=Tractor+Rental+near+${lat},${lon}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+                mapContainer.style.display = 'block';
+            }
+
+            fetch(url)
+                .then(r => r.json())
+                .then(items => renderEquipments(items))
+                .catch(err => {
+                    document.getElementById('rentalGrid').innerHTML = 'Failed to load shops.';
+                });
+        }
+
+        // Request Location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    fetchEquipments(position.coords.latitude, position.coords.longitude);
+                },
+                (err) => {
+                    document.getElementById('loadingText').innerText = "Location denied. Showing default shops...";
+                    fetchEquipments(null, null);
+                },
+                { timeout: 7000 }
+            );
+        } else {
+            fetchEquipments(null, null);
+        }
+    </script>
+</body>
+
+</html>

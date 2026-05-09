@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farm Profit Calculator | Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 20px 20px 80px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #1e3a5f, #2c5282);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .form-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .result-section {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .profit-banner {
+            border-radius: 20px;
+            padding: 28px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profit-amount {
+            font-size: 3rem;
+            font-weight: 900;
+        }
+
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .inline-tip {
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid rgba(241, 196, 15, 0.3);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 14px;
+            color: #fdcb6e;
+            margin-top: 16px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            color: var(--primary-green);
+        }
+
+        .header-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--accent-red);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            margin-bottom: 25px;
+            padding: 20px;
+        }
+
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .log-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .log-amount {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .expense {
+            color: var(--accent-red);
+        }
+
+        .profit {
+            color: var(--primary-green);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container animate-fade-in">
+        <a href="/dashboard"
+            style="color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;font-weight:500;">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+
+        <div class="hero" style="background: linear-gradient(135deg, #e67e22, #d35400);">
+            <div style="font-size:3rem;margin-bottom:12px;">📔</div>
+            <h1>Farm Ledger</h1>
+            <p style="color:rgba(255,255,255,0.7)">Track every rupee spent and earned</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">₹45,200</div>
+                <div class="stat-label">Investment</div>
+            </div>
+            <div class="stat-card" style="border-color: var(--primary-green);">
+                <div class="stat-value" style="color: var(--primary-green);">₹82,500</div>
+                <div class="stat-label">Sales</div>
+            </div>
+            <div class="stat-card" style="border-color: #f1c40f;">
+                <div class="stat-value" style="color: #f1c40f;">₹37,300</div>
+                <div class="stat-label">Profit</div>
+            </div>
+        </div>
+
+        <div class="form-card chart-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="font-size: 16px;"><i class="fas fa-chart-pie"></i> Season Analysis</h3>
+                <span style="font-size: 11px; color: var(--text-muted);">Current: Paddy</span>
+            </div>
+            <div style="display: flex; align-items: flex-end; gap: 10px; height: 100px; padding: 10px 0;">
+                <div style="flex:1; height:30%; background:#e74c3c; border-radius:4px;" title="Seeds"></div>
+                <div style="flex:1; height:50%; background:#e67e22; border-radius:4px;" title="Labor"></div>
+                <div style="flex:1; height:20%; background:#3498db; border-radius:4px;" title="Fuel"></div>
+                <div style="flex:1; height:85%; background:var(--primary-green); border-radius:4px;" title="Sales">
+                </div>
+            </div>
+            <div
+                style="display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); margin-top: 5px;">
+                <span>Seeds</span><span>Labor</span><span>Fuel</span><span>Sales</span>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+                <div class="section-title" style="margin:0; border:0;">📋 Daily Transaction Logs</div>
+                <button class="btn-farm" style="padding: 6px 12px; font-size: 12px; height: auto;"><i
+                        class="fas fa-plus"></i> Add New</button>
+            </div>
+            <div class="log-item">
+                <div class="log-info">
+                    <div class="log-title">Paddy Seeds (50kg)</div>
+                    <div class="log-date">12 Mar 2026 - Input Cost</div>
+                </div>
+                <div class="log-amount expense">- ₹12,000</div>
+            </div>
+            <div class="log-item">
+                <div class="log-info">
+                    <div class="log-title">Tomato Market Sale</div>
+                    <div class="log-date">10 Mar 2026 - Revenue</div>
+                </div>
+                <div class="log-amount profit">+ ₹25,400</div>
+            </div>
+            <div class="log-item">
+                <div class="log-info">
+                    <div class="log-title">Diesel for Irrigation</div>
+                    <div class="log-date">08 Mar 2026 - Fuel Cost</div>
+                </div>
+                <div class="log-amount expense">- ₹3,500</div>
+            </div>
+            <div class="log-item" style="border:0">
+                <div class="log-info">
+                    <div class="log-title">Farm Labour (5 Days)</div>
+                    <div class="log-date">05 Mar 2026 - Labor Cost</div>
+                </div>
+                <div class="log-amount expense">- ₹5,000</div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="section-title">📊 Quick Profit Estimator</div>
+
+            <div class="result-section" id="resultSection">
+                <div class="profit-banner" id="profitBanner">
+                    <div style="font-size:2rem;margin-bottom:8px;" id="profitEmoji">🎉</div>
+                    <div id="profitLabel" style="font-size:1rem;opacity:0.8;margin-bottom:8px;">Net Profit</div>
+                    <div class="profit-amount" id="profitAmount">₹0</div>
+                    <div style="font-size:14px;margin-top:10px;opacity:0.7;" id="marginText"></div>
+                </div>
+
+                <div class="form-card">
+                    <div class="section-title">📋 Detailed Breakdown</div>
+                    <div class="breakdown-row"><span>Total Revenue</span><strong id="brRevenue"
+                            style="color:var(--primary-green)">₹0</strong></div>
+                    <div class="breakdown-row"><span>Seed Cost</span><strong id="brSeed"
+                            style="color:var(--accent-red)">₹0</strong></div>
+                    <div class="breakdown-row"><span>Fertilizer Cost</span><strong id="brFert"
+                            style="color:var(--accent-red)">₹0</strong></div>
+                    <div class="breakdown-row"><span>Labour Cost</span><strong id="brLabour"
+                            style="color:var(--accent-red)">₹0</strong></div>
+                    <div class="breakdown-row"><span>Other Costs</span><strong id="brOther"
+                            style="color:var(--accent-red)">₹0</strong></div>
+                    <div class="breakdown-row"
+                        style="border-bottom:none;border-top: 1px solid rgba(255,255,255,0.15);padding-top:15px;"><span
+                            style="font-weight:700;">Total Cost</span><strong id="brTotal"
+                            style="color:white;font-size:1.1rem;">₹0</strong></div>
+                    <div class="inline-tip" id="tipBox"></div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="/dashboard" class="nav-item"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
+            <a href="/calculators" class="nav-item"><i class="fas fa-calculator nav-icon"></i><span>Tools</span></a>
+            <a href="/profit" class="nav-item" style="color:var(--primary-green)"><i
+                    class="fas fa-chart-bar nav-icon"></i><span>Profit</span></a>
+            <a href="/yield" class="nav-item"><i class="fas fa-seedling nav-icon"></i><span>Yield</span></a>
+            <a href="/schemes" class="nav-item"><i
+                    class="fas fa-hand-holding-dollar nav-icon"></i><span>Schemes</span></a>
+        </nav>
+
+        <script>
+            function fmt(n) { return '₹' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
+
+            function calculate() {
+                const seed = parseFloat(document.getElementById('seedCost').value) || 0;
+                const fert = parseFloat(document.getElementById('fertCost').value) || 0;
+                const labour = parseFloat(document.getElementById('labourCost').value) || 0;
+                const other = parseFloat(document.getElementById('otherCost').value) || 0;
+                const yieldQ = parseFloat(document.getElementById('yield').value) || 0;
+                const price = parseFloat(document.getElementById('marketPrice').value) || 0;
+
+                const totalCost = seed + fert + labour + other;
+                const revenue = yieldQ * price;
+                const profit = revenue - totalCost;
+                const margin = revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : 0;
+
+                document.getElementById('brRevenue').textContent = fmt(revenue);
+                document.getElementById('brSeed').textContent = fmt(seed);
+                document.getElementById('brFert').textContent = fmt(fert);
+                document.getElementById('brLabour').textContent = fmt(labour);
+                document.getElementById('brOther').textContent = fmt(other);
+                document.getElementById('brTotal').textContent = fmt(totalCost);
+                document.getElementById('profitAmount').textContent = fmt(profit);
+                document.getElementById('marginText').textContent = `Profit Margin: ${margin}%`;
+
+                const banner = document.getElementById('profitBanner');
+                if (profit > 0) {
+                    banner.style.background = 'linear-gradient(135deg, rgba(46,204,113,0.15), rgba(39,174,96,0.05))';
+                    banner.style.border = '1px solid rgba(46,204,113,0.3)';
+                    document.getElementById('profitEmoji').textContent = '🎉';
+                    document.getElementById('profitLabel').textContent = 'Net Profit';
+                    document.getElementById('profitAmount').style.color = '#2ecc71';
+                    document.getElementById('tipBox').innerHTML = '💡 <strong>Tip:</strong> Good profit this season! Consider reinvesting 20% into soil health for higher yields next cycle.';
+                } else {
+                    banner.style.background = 'linear-gradient(135deg, rgba(231,76,60,0.15), rgba(192,57,43,0.05))';
+                    banner.style.border = '1px solid rgba(231,76,60,0.3)';
+                    document.getElementById('profitEmoji').textContent = '📉';
+                    document.getElementById('profitLabel').textContent = 'Net Loss';
+                    document.getElementById('profitAmount').style.color = '#e74c3c';
+                    document.getElementById('tipBox').innerHTML = '💡 <strong>Tip:</strong> Try reducing labour cost, explore PM-Kisan scheme, and use organic alternatives to cut fertilizer cost.';
+                }
+
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+            }
+        </script>
+</body>
+
+</html>

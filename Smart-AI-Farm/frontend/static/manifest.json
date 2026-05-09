@@ -1,0 +1,16 @@
+{
+  "name": "Smart AI Farm",
+  "short_name": "Farm AI",
+  "description": "Smart Agriculture AI Assistant app for Crop Disease and Weather.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#121826",
+  "theme_color": "#2ecc71",
+  "icons": [
+    {
+      "src": "/static/images/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

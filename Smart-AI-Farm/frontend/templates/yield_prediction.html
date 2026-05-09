@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yield Prediction | Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 20px 20px 80px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #1a3a1f, #27ae60);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .form-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 46px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: var(--primary-green);
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked+.toggle-slider::before {
+            transform: translateX(22px);
+        }
+
+        .result-card {
+            display: none;
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .big-yield {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(39, 174, 96, 0.15), rgba(26, 163, 84, 0.05));
+            border-radius: 18px;
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--primary-green);
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .rec-item {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .nav-item.active,
+        .nav-item:hover {
+            color: var(--primary-green);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        @media(max-width:500px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container animate-fade-in">
+        <a href="/dashboard"
+            style="color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:8px;margin-bottom:20px;font-weight:500;">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <div class="hero">
+            <div style="font-size:3rem;margin-bottom:12px;">📈</div>
+            <h1>Yield Prediction</h1>
+            <p style="color:rgba(255,255,255,0.75);margin-top:6px;">AI-powered harvest forecast based on your farm
+                conditions</p>
+        </div>
+
+        <div class="form-card">
+            <div class="input-grid">
+                <div>
+                    <label>Crop</label>
+                    <select class="form-control-farm" id="crop">
+                        <option value="rice">Rice</option>
+                        <option value="wheat">Wheat</option>
+                        <option value="maize">Maize (Corn)</option>
+                        <option value="cotton">Cotton</option>
+                        <option value="tomato">Tomato</option>
+                        <option value="sugarcane">Sugarcane</option>
+                        <option value="potato">Potato</option>
+                        <option value="onion">Onion</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Area (Acres)</label>
+                    <input type="number" id="area" class="form-control-farm" value="2" min="0.5" step="0.5">
+                </div>
+                <div>
+                    <label>Soil Type</label>
+                    <select class="form-control-farm" id="soilType">
+                        <option value="loamy">Loamy (Best)</option>
+                        <option value="black">Black Soil</option>
+                        <option value="clay">Clay Soil</option>
+                        <option value="red">Red Soil</option>
+                        <option value="sandy">Sandy Soil</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Annual Rainfall (mm)</label>
+                    <input type="number" id="rain" class="form-control-farm" value="600" min="100" max="2000">
+                </div>
+                <div>
+                    <label>Avg Temperature (°C)</label>
+                    <input type="number" id="temp" class="form-control-farm" value="28" min="10" max="50">
+                </div>
+            </div>
+            <div class="toggle-row">
+                <span style="font-weight:500;">💊 Fertilizer Applied?</span>
+                <label class="toggle-switch"><input type="checkbox" id="fertilizer" checked><span
+                        class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row" style="border-bottom:none;">
+                <span style="font-weight:500;">🚿 Irrigation Available?</span>
+                <label class="toggle-switch"><input type="checkbox" id="irrigation" checked><span
+                        class="toggle-slider"></span></label>
+            </div>
+            <button class="btn-farm" onclick="predict()"
+                style="width:100%;margin-top:20px;font-size:1rem;padding:14px;">
+                <i class="fas fa-brain"></i> Predict Yield
+            </button>
+        </div>
+
+        <div class="result-card" id="resultCard">
+            <div class="big-yield">
+                <div style="font-size:1rem;color:var(--text-muted);margin-bottom:6px;">Predicted Yield</div>
+                <div style="font-size:3.5rem;font-weight:900;color:var(--primary-green);" id="yieldTotal">--</div>
+                <div style="font-size:1rem;color:var(--text-muted);">Quintals (Total)</div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-box">
+                    <div class="stat-val" id="yieldPerAcre">--</div>
+                    <div class="stat-lbl">Qtl / Acre</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="revenue">₹--</div>
+                    <div class="stat-lbl">Est. Revenue</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="confidence" style="color:#f1c40f;">--</div>
+                    <div class="stat-lbl">Confidence</div>
+                </div>
+            </div>
+            <div style="font-weight:600;margin-bottom:12px;font-size:1rem;"><i class="fas fa-lightbulb"
+                    style="color:#f1c40f;margin-right:8px;"></i>Recommendations</div>
+            <div id="recList"></div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item"><i class="fas fa-home nav-icon"></i><span>Home</span></a>
+        <a href="/profit" class="nav-item"><i class="fas fa-chart-bar nav-icon"></i><span>Profit</span></a>
+        <a href="/yield" class="nav-item active"><i class="fas fa-seedling nav-icon"></i><span>Yield</span></a>
+        <a href="/calendar" class="nav-item"><i class="fas fa-calendar nav-icon"></i><span>Calendar</span></a>
+        <a href="/schemes" class="nav-item"><i class="fas fa-hand-holding-dollar nav-icon"></i><span>Schemes</span></a>
+    </nav>
+
+    <script>
+        async function predict() {
+            const btn = document.querySelector('.btn-farm');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Predicting...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/predict-yield', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        crop: document.getElementById('crop').value,
+                        area_acres: document.getElementById('area').value,
+                        soil_type: document.getElementById('soilType').value,
+                        rain_mm: document.getElementById('rain').value,
+                        temperature: document.getElementById('temp').value,
+                        fertilizer_used: document.getElementById('fertilizer').checked,
+                        irrigation_available: document.getElementById('irrigation').checked
+                    })
+                });
+                const data = await res.json();
+                document.getElementById('yieldTotal').textContent = data.total_yield_quintals;
+                document.getElementById('yieldPerAcre').textContent = data.predicted_yield_per_acre;
+                document.getElementById('revenue').textContent = '₹' + data.estimated_revenue.toLocaleString('en-IN');
+                document.getElementById('confidence').textContent = data.confidence;
+
+                const recList = document.getElementById('recList');
+                recList.innerHTML = '';
+                data.recommendations.forEach(r => {
+                    recList.innerHTML += `<div class="rec-item"><i class="fas fa-arrow-right" style="color:var(--primary-green);margin-top:2px;flex-shrink:0;"></i>${r}</div>`;
+                });
+
+                document.getElementById('resultCard').style.display = 'block';
+                document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                alert('Prediction failed. Please try again.');
+            }
+
+            btn.innerHTML = '<i class="fas fa-brain"></i> Predict Yield';
+            btn.disabled = false;
+        }
+    </script>
+</body>
+
+</html>

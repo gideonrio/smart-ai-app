@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Smart AI Farm Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 24px 0;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .divider:not(:empty)::before {
+            margin-right: .75em;
+        }
+
+        .divider:not(:empty)::after {
+            margin-left: .75em;
+        }
+
+        .btn-google {
+            width: 100%;
+            background: white;
+            color: #272727;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-google:hover {
+            background: #f1f1f1;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-google img {
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="auth-container">
+        <div class="glass-panel auth-card animate-fade-in">
+            <div class="auth-logo">
+                <i class="fas fa-leaf"></i>
+            </div>
+            <h1 class="auth-title">Welcome Farmer</h1>
+            <p class="auth-subtitle">Login to your Smart AI Farm Assistant</p>
+
+            <form id="loginForm">
+                <div class="input-group">
+                    <i class="fas fa-envelope input-icon"></i>
+                    <input type="email" id="email" class="form-control-farm with-icon" placeholder="Enter Email Address"
+                        required>
+                </div>
+                <div class="input-group" style="margin-top: 16px;">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="password" class="form-control-farm with-icon"
+                        placeholder="Enter Password" required>
+                </div>
+                <div style="text-align: right; margin-bottom: 16px;">
+                    <a href="#" id="forgotPassword"
+                        style="color: var(--accent-green); text-decoration: none; font-size: 14px;">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="btn-farm" style="width: 100%;">
+                    Log In <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                </button>
+            </form>
+
+            <div class="divider">
+                <span>OR</span>
+            </div>
+
+            <button id="googleLogin" class="btn-google">
+                <img src="https://www.google.com/favicon.ico" alt="Google">
+                Continue with Google
+            </button>
+
+            <p id="errorMessage" style="color: var(--accent-red); margin-top: 16px; display: none; font-size: 14px;">
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = e.target.querySelector('button');
+            const errorMsg = document.getElementById('errorMessage');
+
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+            btn.disabled = true;
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    window.location.href = '/dashboard';
+                } else {
+                    errorMsg.textContent = data.error || "Login failed";
+                    errorMsg.style.display = 'block';
+                    btn.innerHTML = 'Log In <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                errorMsg.textContent = "Network error. Please try again.";
+                errorMsg.style.display = 'block';
+                btn.innerHTML = 'Log In <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>';
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('forgotPassword').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert("Forgot Password instructions sent to your email!");
+        });
+
+        document.getElementById('googleLogin').addEventListener('click', () => {
+            // In a production app, redirect to your Google OAuth endpoint
+            // For this demo, we mock the redirection and direct login
+            const btn = document.getElementById('googleLogin');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 1000);
+        });
+    </script>
+</body>
+
+</html>

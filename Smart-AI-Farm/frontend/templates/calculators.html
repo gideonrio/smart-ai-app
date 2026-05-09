@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Calculators - Pro Tools</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 30px 20px 80px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 24px;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover {
+            color: white;
+        }
+
+        .calc-card {
+            background: var(--glass-bg);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .calc-title {
+            font-size: 1.2rem;
+            color: var(--primary-green);
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 500px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .result-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border-left: 4px solid var(--primary-green);
+            display: none;
+        }
+
+        .result-box h4 {
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .result-box p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 6px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--primary-green);
+        }
+
+        .nav-icon {
+            font-size: 22px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-container animate-fade-in">
+        <a href="/dashboard"
+            style="color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:8px;margin-bottom:15px;font-weight:500;">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <h1 style="margin-bottom: 24px; font-size: 28px;">Farm Calculators <span style="color: #f1c40f;"><i
+                    class="fas fa-crown"></i></span></h1>
+
+        <!-- Pesticide Spray Calculator -->
+        <div class="calc-card">
+            <div class="calc-title"><i class="fas fa-flask"></i> Pesticide Mixture Calculator</div>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Calculate exact pesticide
+                required based on standard dose rate and your tank capacity.</p>
+
+            <div class="input-row">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted);">Dose
+                        Rate (ml per Litre)</label>
+                    <input type="number" id="doseRate" class="form-control-farm" placeholder="e.g. 2.5">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted);">Tank
+                        Volume (Litres)</label>
+                    <input type="number" id="tankVol" class="form-control-farm" placeholder="e.g. 15">
+                </div>
+            </div>
+
+            <button class="btn-farm" style="width: 100%;" onclick="calcSpray()">Calculate Mix <i
+                    class="fas fa-calculator" style="margin-left: 5px;"></i></button>
+
+            <div id="sprayResult" class="result-box">
+                <h4 id="sprayVal">-- ml</h4>
+                <p>Add this exact amount to your tank for optimal spray.</p>
+            </div>
+        </div>
+
+        <!-- Fertilizer Estimator -->
+        <div class="calc-card">
+            <div class="calc-title"><i class="fas fa-seedling"></i> Urea N-Estimator</div>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Calculate Kg of Urea needed to
+                meet your Nitrogen requirement per acre.</p>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted);">Required
+                    Nitrogen (Kg/Acre)</label>
+                <input type="number" id="nitroReq" class="form-control-farm" placeholder="e.g. 40">
+            </div>
+
+            <button class="btn-farm" style="width: 100%;" onclick="calcUrea()">Estimate Urea <i
+                    class="fas fa-calculator" style="margin-left: 5px;"></i></button>
+
+            <div id="ureaResult" class="result-box" style="border-left-color: var(--accent-orange);">
+                <h4 id="ureaVal">-- Kg</h4>
+                <p>Standard Urea contains ~46% Nitrogen.</p>
+            </div>
+        </div>
+
+        <!-- Crop Yield Estimator -->
+        <div class="calc-card">
+            <div class="calc-title" style="color: #3498db;"><i class="fas fa-chart-bar"></i> Crop Yield Estimator</div>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Estimate your total harvest yield
+                based on plant density and average yield per plant.</p>
+
+            <div class="input-row">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted);">Plants
+                        per Acre</label>
+                    <input type="number" id="plantDensity" class="form-control-farm" placeholder="e.g. 15000">
+                </div>
+                <div>
+                    <label
+                        style="display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-muted);">Average
+                        Yield/Plant (Kg)</label>
+                    <input type="number" id="yieldPerPlant" class="form-control-farm" placeholder="e.g. 0.25">
+                </div>
+            </div>
+
+            <button class="btn-farm" style="width: 100%; background: linear-gradient(to right, #2980b9, #3498db);"
+                onclick="calcYield()">Estimate Yield <i class="fas fa-calculator"
+                    style="margin-left: 5px;"></i></button>
+
+            <div id="yieldResult" class="result-box" style="border-left-color: #3498db;">
+                <h4 id="yieldVal">-- Kg / Acre</h4>
+                <p>Estimated total yield for your chosen area.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <i class="fas fa-home nav-icon"></i><span>Home</span>
+        </a>
+        <a href="/weather" class="nav-item">
+            <i class="fas fa-cloud nav-icon"></i><span>Weather</span>
+        </a>
+        <a href="/chatbot" class="nav-item">
+            <i class="fas fa-robot nav-icon"></i><span>AI Bot</span>
+        </a>
+        <a href="/schemes" class="nav-item">
+            <i class="fas fa-hand-holding-dollar nav-icon"></i><span>Schemes</span>
+        </a>
+    </nav>
+
+    <script>
+        function calcSpray() {
+            const dose = parseFloat(document.getElementById('doseRate').value);
+            const vol = parseFloat(document.getElementById('tankVol').value);
+
+            if (dose && vol) {
+                const required = (dose * vol).toFixed(1);
+                document.getElementById('sprayVal').textContent = required + " ml";
+                document.getElementById('sprayResult').style.display = 'block';
+            } else {
+                alert("Please enter valid numbers");
+            }
+        }
+
+        function calcUrea() {
+            const nitro = parseFloat(document.getElementById('nitroReq').value);
+            // Urea is 46% N, so req / 0.46 = Urea needed
+            if (nitro) {
+                const urea = (nitro / 0.46).toFixed(1);
+                document.getElementById('ureaVal').textContent = urea + " Kg";
+                document.getElementById('ureaResult').style.display = 'block';
+            } else {
+                alert("Please enter valid nitrogen requirement.");
+            }
+        }
+
+        function calcYield() {
+            const plants = parseFloat(document.getElementById('plantDensity').value);
+            const yieldKg = parseFloat(document.getElementById('yieldPerPlant').value);
+            if (plants && yieldKg) {
+                const totalYield = (plants * yieldKg).toFixed(1);
+                document.getElementById('yieldVal').textContent = totalYield + " Kg / Acre";
+                document.getElementById('yieldResult').style.display = 'block';
+            } else {
+                alert("Please enter valid numbers for estimation.");
+            }
+        }
+    </script>
+</body>
+
+</html>

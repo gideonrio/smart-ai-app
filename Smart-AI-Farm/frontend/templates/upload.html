@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Crop Scan - Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 30px 20px 80px;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+
+        .back-btn:hover {
+            color: white;
+        }
+
+        /* Camera UI */
+        .camera-container {
+            width: 100%;
+            height: 320px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            border: 2px dashed var(--border-color);
+            margin-bottom: 24px;
+            transition: border-color 0.3s;
+        }
+
+        .camera-container.dragover {
+            border-color: var(--primary-green);
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .video-stream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+            background: #000;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .camera-overlay i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        /* Loader */
+        .ai-loader {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .scan-line {
+            width: 100%;
+            height: 4px;
+            background: var(--primary-green);
+            position: absolute;
+            left: 0;
+            top: 0;
+            animation: scanAnim 2s linear infinite;
+            box-shadow: 0 0 15px var(--primary-green);
+            display: none;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .page-container { padding: 20px 15px 100px; }
+            .camera-container { height: 280px; }
+            .action-buttons { gap: 10px; }
+            .toggle-btn { padding: 6px 10px; font-size: 11px; }
+        }
+
+        @media (max-width: 480px) {
+            .camera-container { height: 220px; border-radius: 15px; }
+            h1 { font-size: 20px !important; }
+            p { font-size: 13px !important; }
+            .action-buttons button { font-size: 12px; padding: 10px 15px; }
+        }
+
+        @keyframes scanAnim {
+            0% {
+                top: 0;
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                top: 100%;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-container animate-fade-in">
+        <div class="header"
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <a href="/dashboard" class="back-btn" style="margin:0;"><i class="fas fa-arrow-left"></i> Home</a>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div id="gpsStatusBadge" style="font-size: 10px; color: #2ecc71; display: none; background: rgba(46, 204, 113, 0.1); padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(46, 204, 113, 0.3);">
+                    <i class="fas fa-satellite"></i> GPS ACTIVE
+                </div>
+                <div id="scanTypeToggle"
+                    style="display: flex; background: var(--glass-bg); padding: 5px; border-radius: 12px; border: 1px solid var(--border-color);">
+                    <button class="toggle-btn active" id="btnCropScan"
+                        style="padding: 8px 15px; border-radius: 8px; border:0; background: var(--primary-green); color: white; cursor: pointer; font-size: 13px; font-weight: 600;">Crop
+                        Scan</button>
+                    <button class="toggle-btn" id="btnSoilScan"
+                        style="padding: 8px 15px; border-radius: 8px; border:0; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 600;">Soil
+                        Scan</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const lat = localStorage.getItem('userLat');
+                const lon = localStorage.getItem('userLon');
+                if (lat && lon) {
+                    document.getElementById('gpsStatusBadge').style.display = 'block';
+                }
+            });
+        </script>
+
+        <h1 id="pageTitle" style="font-size: 24px; margin-bottom: 8px;">Scan Crop</h1>
+        <p id="pageDesc" style="color: var(--text-muted); margin-bottom: 30px;">Take a clear photo of the leaf for AI
+            disease diagnosis.</p>
+
+        <div class="camera-container" id="dropZone">
+            <video id="videoStream" class="video-stream" autoplay playsinline></video>
+            <img id="imagePreview" class="image-preview" alt="Preview">
+            <div class="scan-line" id="scanLine"></div>
+
+            <div class="camera-overlay" id="cameraOverlay">
+                <i class="fas fa-image"></i>
+                <p>Drag & Drop here<br>or select an option below</p>
+            </div>
+
+            <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-outline-farm" id="startCamBtn"><i class="fas fa-camera"></i> Open Camera</button>
+            <button class="btn-outline-farm" id="captureBtn" style="display: none;"><i class="fas fa-circle"></i>
+                Capture</button>
+            <button class="btn-outline-farm" id="uploadFileBtn"><i class="fas fa-folder-open"></i> Gallery</button>
+        </div>
+
+        <button class="btn-farm" id="analyzeBtn" style="width: 100%; display: none;">
+            Analyze with AI <i class="fas fa-brain" style="margin-left: 8px;"></i>
+        </button>
+
+        <div class="ai-loader" id="aiLoader">
+            <h3 id="loaderTitle" style="color: var(--primary-green); margin-bottom: 10px;">AI is analyzing...</h3>
+            <p id="loaderDesc" style="color: var(--text-muted); font-size: 14px;">Extracting features and identifying diseases</p>
+            <div style="margin-top: 20px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--primary-green);"></i>
+                <div id="scanInfo" style="margin-top: 15px; font-size: 12px; color: var(--primary-green);">Starting AI Scan...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <i class="fas fa-home nav-icon"></i>
+            <span>Home</span>
+        </a>
+        <a href="/weather" class="nav-item">
+            <i class="fas fa-cloud-sun nav-icon"></i>
+            <span>Weather</span>
+        </a>
+        <a href="/chatbot" class="nav-item active">
+            <i class="fas fa-robot nav-icon"></i>
+            <span>AI Bot</span>
+        </a>
+        <a href="/reminder" class="nav-item">
+            <i class="fas fa-calendar-check nav-icon"></i>
+            <span>Reminders</span>
+        </a>
+        <a href="/emergency" class="nav-item">
+            <i class="fas fa-phone-alt nav-icon"></i>
+            <span>Emergency</span>
+        </a>
+    </nav>
+
+    <script>
+        const video = document.getElementById('videoStream');
+        const imgPreview = document.getElementById('imagePreview');
+        const overlay = document.getElementById('cameraOverlay');
+        const startCamBtn = document.getElementById('startCamBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const uploadFileBtn = document.getElementById('uploadFileBtn');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const aiLoader = document.getElementById('aiLoader');
+        const scanLine = document.getElementById('scanLine');
+        const dropZone = document.getElementById('dropZone');
+
+        let currentStream = null;
+        let selectedFiles = [];
+        let isSoilScan = false;
+
+        document.getElementById('btnSoilScan').onclick = () => {
+            isSoilScan = true;
+            document.getElementById('btnSoilScan').style.background = 'var(--primary-green)';
+            document.getElementById('btnSoilScan').style.color = 'white';
+            document.getElementById('btnCropScan').style.background = 'transparent';
+            document.getElementById('btnCropScan').style.color = 'var(--text-muted)';
+            document.getElementById('pageTitle').textContent = 'Soil Scan';
+            document.getElementById('pageDesc').textContent = 'Scan your soil to detect Nitrogen, Phosphorus & Potassium (NPK) levels.';
+            document.getElementById('loaderTitle').textContent = 'Analyzing Soil Health...';
+            document.getElementById('loaderDesc').textContent = 'Calculating mineral composition and moisture levels.';
+        };
+
+        document.getElementById('btnCropScan').onclick = () => {
+            isSoilScan = false;
+            document.getElementById('btnCropScan').style.background = 'var(--primary-green)';
+            document.getElementById('btnCropScan').style.color = 'white';
+            document.getElementById('btnSoilScan').style.background = 'transparent';
+            document.getElementById('btnSoilScan').style.color = 'var(--text-muted)';
+            document.getElementById('pageTitle').textContent = 'Scan Crop';
+            document.getElementById('pageDesc').textContent = 'Take a clear photo of the leaf for AI disease diagnosis.';
+        };
+
+        // Universal Camera/Gallery Handler
+        function triggerUniversalUpload() {
+            // Standard file input is the most reliable 'Camera or Gallery' method for mobile/desktop
+            fileInput.click();
+        }
+
+        // Start Live Camera (WebRTC)
+        startCamBtn.addEventListener('click', async () => {
+            try {
+                // If on mobile, first try the native camera picker via file input as it's more reliable
+                if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                    fileInput.setAttribute('capture', 'environment');
+                    fileInput.click();
+                    return;
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+                });
+                video.srcObject = stream;
+                currentStream = stream;
+
+                video.style.display = 'block';
+                overlay.style.display = 'none';
+                imgPreview.style.display = 'none';
+
+                startCamBtn.style.display = 'none';
+                captureBtn.style.display = 'inline-block';
+                analyzeBtn.style.display = 'none';
+            } catch (err) {
+                console.error("Camera Error:", err);
+                // Fallback to file input
+                alert("Live camera not available. Switching to standard photo upload.");
+                fileInput.removeAttribute('capture');
+                fileInput.click();
+            }
+        });
+
+        // Capture from Camera (Live Mode)
+        captureBtn.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Stop stream
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+            video.style.display = 'none';
+
+            // Show preview
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            imgPreview.src = dataUrl;
+            imgPreview.style.display = 'block';
+
+            // Convert to blob and store
+            canvas.toBlob(blob => {
+                selectedFiles = [new File([blob], "camera_capture.jpg", { type: "image/jpeg" })];
+            }, 'image/jpeg', 0.9);
+
+            captureBtn.style.display = 'none';
+            startCamBtn.style.display = 'inline-block';
+            startCamBtn.innerHTML = '<i class="fas fa-redo"></i> Retake';
+            analyzeBtn.style.display = 'inline-block';
+        });
+
+        // File Upload Handlers (Gallery)
+        uploadFileBtn.addEventListener('click', () => {
+            fileInput.removeAttribute('capture');
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFiles = Array.from(e.target.files);
+                handleFiles(selectedFiles);
+            }
+        });
+
+        // Drag & Drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!currentStream) dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                selectedFiles = Array.from(e.dataTransfer.files);
+                handleFiles(selectedFiles);
+            }
+        });
+
+        function handleFiles(files) {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                videoStream.style.display = 'none';
+            }
+
+            // For preview, just show the first one
+            const file = files[0];
+            const objectUrl = URL.createObjectURL(file);
+            imgPreview.src = objectUrl;
+            imgPreview.style.display = 'block';
+            cameraOverlay.style.display = 'none';
+            analyzeBtn.style.display = 'block';
+            
+            if (files.length > 1) {
+                analyzeBtn.innerHTML = `Analyze All (${files.length}) <i class="fas fa-brain" style="margin-left: 8px;"></i>`;
+            } else {
+                analyzeBtn.innerHTML = `Analyze with AI <i class="fas fa-brain" style="margin-left: 8px;"></i>`;
+            }
+            
+            // Clean up memory
+            imgPreview.onload = () => URL.revokeObjectURL(objectUrl);
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFiles || selectedFiles.length === 0) return;
+
+            // UI States
+            analyzeBtn.style.display = 'none';
+            document.querySelector('.action-buttons').style.display = 'none';
+            aiLoader.style.display = 'block';
+            scanLine.style.display = 'block';
+
+            const lat = localStorage.getItem('userLat');
+            const lon = localStorage.getItem('userLon');
+            const formData = new FormData();
+
+            try {
+                scanInfo.textContent = "Compressing & Preparing Batch...";
+                
+                // Add all files to a single FormData
+                for (const file of selectedFiles) {
+                    const compressedFile = await compressImage(file, 640, 640);
+                    formData.append('image', compressedFile);
+                }
+
+                if (lat && lon) {
+                    formData.append('lat', lat);
+                    formData.append('lon', lon);
+                }
+
+                scanInfo.textContent = "Analyzing ALL images (High Speed)...";
+                const endpoint = isSoilScan ? '/api/predict-soil' : '/api/predict';
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData,
+                    signal: AbortSignal.timeout(60000) 
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // If multiple, data is already an array. If single, wrap it.
+                    const finalResults = Array.isArray(data) ? data : [data];
+                    
+                    // Attach locally generated dataURLs for the result page to show images
+                    // (Server only returns filenames, we want the actual pre-upload preview)
+                    for (let i = 0; i < finalResults.length; i++) {
+                        const file = selectedFiles[i] || selectedFiles[0];
+                        const dataUrl = await new Promise(resolve => {
+                            const r = new FileReader();
+                            r.onload = (e) => resolve(e.target.result);
+                            r.readAsDataURL(file);
+                        });
+                        finalResults[i].image = dataUrl;
+                    }
+
+                    sessionStorage.setItem('ai_results_multiple', JSON.stringify(finalResults));
+                    sessionStorage.setItem('ai_result', JSON.stringify(finalResults[0]));
+                    window.location.href = '/result';
+                } else {
+                    alert('AI Analysis failed: ' + (data.error || 'Server error'));
+                    resetUI();
+                }
+            } catch (err) {
+                console.error("Batch Error:", err);
+                alert('Network Error: Analysis failed. Please check your internet connection.');
+                resetUI();
+            }
+        });
+
+        async function compressImage(file, maxWidth, maxHeight) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height *= maxWidth / width;
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width *= maxHeight / height;
+                                height = maxHeight;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Using JPEG with 0.6 quality for ultra-fast mobile upload
+                        canvas.toBlob((blob) => {
+                            resolve(new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            }));
+                        }, 'image/jpeg', 0.6);
+                    };
+                };
+            });
+        }
+
+        function resetUI() {
+            aiLoader.style.display = 'none';
+            scanLine.style.display = 'none';
+            analyzeBtn.style.display = 'inline-block';
+            document.querySelector('.action-buttons').style.display = 'flex';
+        }
+    </script>
+</body>
+
+</html>

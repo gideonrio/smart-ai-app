@@ -1,0 +1,15 @@
+Flask==3.0.0
+Twilio==8.5.0
+firebase-admin==6.4.0
+tensorflow==2.15.0
+keras==2.15.0
+opencv-python==4.8.1.78
+Pillow==10.1.0
+requests==2.31.0
+numpy==1.26.2
+werkzeug==3.0.1
+gunicorn==21.2.0
+groq==0.11.0
+flask-cors==4.0.0
+flask-caching==2.1.0
+httpx==0.25.2

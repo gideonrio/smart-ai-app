@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Market Prices - Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .market-container {
+            padding: 30px 20px 100px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .price-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .price-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-green);
+        }
+
+        .trend-up {
+            color: #2ecc71;
+        }
+
+        .trend-down {
+            color: #e74c3c;
+        }
+
+        .trend-stable {
+            color: #f1c40f;
+        }
+
+        .search-bar {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            padding: 15px 25px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 30px;
+            outline: none;
+        }
+
+        .search-bar:focus {
+            border-color: var(--primary-green);
+        }
+
+        .update-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 10px;
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--primary-green);
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="market-container animate-fade-in">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h1 style="font-size: 28px;">Live Market Prices</h1>
+            <a href="/dashboard" style="color: white; font-size: 20px;"><i class="fas fa-times"></i></a>
+        </div>
+
+        <input type="text" class="search-bar" id="searchInput" placeholder="Search crop or market location...">
+
+        <div class="market-grid" id="marketGrid">
+            <!-- Data loaded via JS -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
+                <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary-green);"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <i class="fas fa-home nav-icon"></i><span>Home</span>
+        </a>
+        <a href="/news" class="nav-item">
+            <i class="fas fa-newspaper nav-icon"></i><span>News</span>
+        </a>
+        <a href="/chatbot" class="nav-item">
+            <i class="fas fa-robot nav-icon"></i><span>AI Bot</span>
+        </a>
+        <a href="/reminder" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i><span>Reminders</span>
+        </a>
+        <a href="/emergency" class="nav-item">
+            <i class="fas fa-phone-alt nav-icon"></i><span>Emergency</span>
+        </a>
+    </nav>
+
+    <script>
+        let allPrices = [];
+
+        async function fetchPrices() {
+            try {
+                const res = await fetch('/api/market-prices');
+                allPrices = await res.json();
+                renderPrices(allPrices);
+            } catch (err) {
+                document.getElementById('marketGrid').innerHTML = '<p>Error loading market data.</p>';
+            }
+        }
+
+        function renderPrices(data) {
+            const grid = document.getElementById('marketGrid');
+            grid.innerHTML = '';
+
+            data.forEach(item => {
+                const trendIcon = item.trend === 'Up' ? 'fa-arrow-trend-up' : (item.trend === 'Down' ? 'fa-arrow-trend-down' : 'fa-arrows-left-right');
+                const trendClass = 'trend-' + item.trend.toLowerCase();
+
+                grid.innerHTML += `
+                    <div class="price-card">
+                        <span class="update-badge">LIVE UPDATING</span>
+                        <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-seedling" style="color: var(--primary-green);"></i> ${item.crop}
+                        </h3>
+                        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Variety: ${item.variety || 'Standard'}</p>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                            <div>
+                                <div style="font-size: 24px; font-weight: 700; color: white;">${item.price}</div>
+                                <div style="font-size: 13px; color: var(--text-muted); margin-top: 5px;">
+                                    <i class="fas fa-location-dot"></i> ${item.market}
+                                </div>
+                            </div>
+                            <div class="${trendClass}" style="text-align: right;">
+                                <i class="fas ${trendIcon} fa-2x"></i>
+                                <div style="font-size: 12px; margin-top: 5px; font-weight: 700;">${item.trend}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allPrices.filter(p =>
+                p.crop.toLowerCase().includes(term) ||
+                p.market.toLowerCase().includes(term)
+            );
+            renderPrices(filtered);
+        });
+
+        document.addEventListener('DOMContentLoaded', fetchPrices);
+    </script>
+</body>
+
+</html>

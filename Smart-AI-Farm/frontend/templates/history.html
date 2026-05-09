@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction History - Smart AI Farm</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .page-container {
+            padding: 30px 20px 80px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .history-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .history-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .history-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-info {
+            flex: 1;
+        }
+
+        .history-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .history-date {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .history-tags {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        .tag.confident {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--primary-green);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .nav-item.active {
+            color: var(--primary-green);
+        }
+
+        .nav-icon {
+            font-size: 22px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-container animate-fade-in">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 24px;">
+            <a href="/dashboard" style="color: var(--text-muted); text-decoration: none;"><i
+                    class="fas fa-arrow-left"></i></a>
+            <h1 style="font-size: 24px;">Scan History</h1>
+        </div>
+
+        <div id="historyList">
+            <!-- Dynamic Injection / Mock Data-->
+            <div class="history-card">
+                <div
+                    style="width: 80px; height: 80px; background: #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #666;">
+                    <i class="fas fa-image"></i></div>
+                <div class="history-info">
+                    <div class="history-title">
+                        <span>Early Blight</span>
+                        <span class="history-date">Today, 10:30 AM</span>
+                    </div>
+                    <div style="font-size: 14px; color: var(--text-muted);">Tomato > Leaf</div>
+                    <div class="history-tags">
+                        <span class="tag confident">92.5% Confidence</span>
+                        <span class="tag"><i class="fas fa-check"></i> Treated</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="history-card">
+                <div
+                    style="width: 80px; height: 80px; background: #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #666;">
+                    <i class="fas fa-image"></i></div>
+                <div class="history-info">
+                    <div class="history-title">
+                        <span style="color: var(--primary-green);">Healthy</span>
+                        <span class="history-date">Yesterday</span>
+                    </div>
+                    <div style="font-size: 14px; color: var(--text-muted);">Corn > Leaf</div>
+                    <div class="history-tags">
+                        <span class="tag confident">98.1% Confidence</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item">
+            <i class="fas fa-home nav-icon"></i><span>Home</span>
+        </a>
+        <a href="/weather" class="nav-item">
+            <i class="fas fa-cloud nav-icon"></i><span>Weather</span>
+        </a>
+        <a href="/chatbot" class="nav-item">
+            <i class="fas fa-robot nav-icon"></i><span>AI Bot</span>
+        </a>
+        <a href="/reminder" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i><span>Reminders</span>
+        </a>
+        <a href="/emergency" class="nav-item">
+            <i class="fas fa-phone-alt nav-icon"></i><span>Emergency</span>
+        </a>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dataStr = sessionStorage.getItem('ai_result');
+            if (dataStr) {
+                const data = JSON.parse(dataStr);
+                const color = data.disease_pest.toLowerCase() === 'healthy' ? 'var(--primary-green)' : 'white';
+
+                const card = `
+                <div class="history-card" style="border-left: 4px solid var(--primary-green)">
+                    <img src="${data.image}" class="history-img" alt="Scan">
+                    <div class="history-info">
+                        <div class="history-title">
+                            <span style="color: ${color};">${data.disease_pest}</span>
+                            <span class="history-date">Just Now</span>
+                        </div>
+                        <div style="font-size: 14px; color: var(--text-muted);">${data.plant_type} > ${data.plant_part}</div>
+                        <div class="history-tags">
+                            <span class="tag confident">${data.confidence.toFixed(1)}% Confidence</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+                document.getElementById('historyList').insertAdjacentHTML('afterbegin', card);
+            }
+        });
+    </script>
+</body>
+
+</html>

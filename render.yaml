@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: smart-ai-farm
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
+      - key: GROQ_API_KEY
+        generateValue: false # User will need to set this in Render Dashboard or .env
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "0"
