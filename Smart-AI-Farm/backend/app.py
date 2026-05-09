@@ -22,13 +22,22 @@ def create_app():
     CORS(app)
     app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB limit
 
-    # 📁 Persistent Storage Configuration
+    # 📁 Persistent Storage Configuration (Handles Read-Only Vercel /tmp)
     STORAGE_DIR = "/storage/uploads"
     if not os.path.exists(STORAGE_DIR):
-        # Fallback to local if not on cloud
-        STORAGE_DIR = os.path.join(BASE_DIR, 'dataset', 'uploads')
-    os.makedirs(STORAGE_DIR, exist_ok=True)
+        if os.environ.get('VERCEL'):
+            STORAGE_DIR = "/tmp/uploads"
+        else:
+            STORAGE_DIR = os.path.join(BASE_DIR, 'dataset', 'uploads')
+    
+    try:
+        os.makedirs(STORAGE_DIR, exist_ok=True)
+    except OSError:
+        STORAGE_DIR = "/tmp/uploads"
+        os.makedirs(STORAGE_DIR, exist_ok=True)
+        
     app.config['UPLOAD_FOLDER'] = STORAGE_DIR
+
 
     # ⚡ Caching for speed
     cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
