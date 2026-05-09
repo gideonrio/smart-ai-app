@@ -273,10 +273,13 @@ def predict_disease():
                 response_format={"type": "json_object"}
             )
 
-            res_content = chat_completion.choices[0].message.content
             # Keep log for debug
-            with open("groq_debug.log", "a") as f:
-                f.write(f"\nRAW: {res_content}\n")
+            try:
+                log_path = "/tmp/groq_debug.log" if os.environ.get('VERCEL') else "groq_debug.log"
+                with open(log_path, "a") as f:
+                    f.write(f"\nRAW: {res_content}\n")
+            except Exception:
+                pass
 
             # Clean possible markdown wrapping
             if "```json" in res_content:
@@ -364,9 +367,13 @@ def predict_disease():
 
     except Exception as e:
         print(f"[WARNING] API Error: {e}. Falling back...")
-        with open("groq_debug.log", "a", encoding="utf-8") as lf:
-            lf.write(
-                f"\n[{datetime.now()}] API ERROR (FALLBACK TRIGGERED): {str(e)}\n")
+        try:
+            log_path = "/tmp/groq_debug.log" if os.environ.get('VERCEL') else "groq_debug.log"
+            with open(log_path, "a", encoding="utf-8") as lf:
+                lf.write(
+                    f"\n[{datetime.now()}] API ERROR (FALLBACK TRIGGERED): {str(e)}\n")
+        except Exception:
+            pass
 
         if is_batch:
             fallback_results = []
