@@ -2,7 +2,6 @@ Flask==3.0.0
 flask-cors
 flask-caching
 numpy<2
-opencv-python-headless
 Pillow
 requests
 httpx
